@@ -62,6 +62,18 @@ extern "C" {
  */
 const char *mu_rfc_1123_str_to_tm(const char *s, struct tm *tm);
 
+/**
+ * @brief Print the date and time in RFC 1123 format.
+ *
+ * Print the contents of a struct tm as an RFC 1123 formatted string, e.g.:
+ *
+ *    Tue, 18 Jun 2019 16:06:21 GMT
+ *
+ * @param tm Pointer to a struct tm containing the date and time.
+ * @param s String buffer to receive the results
+ * @param maxlen Capacity of the string buffer.
+ * @return Pointer to the filled-in string buffer.
+ */
 char *mu_rfc_1123_tm_to_str(const struct tm *tm, char *s, int maxlen);
 
 #ifdef __cplusplus
