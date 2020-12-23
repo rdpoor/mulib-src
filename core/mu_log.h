@@ -32,6 +32,7 @@ extern "C" {
 // =============================================================================
 // includes
 
+
 // =============================================================================
 // types and definitions
 
@@ -135,9 +136,10 @@ typedef enum {
 // no logging code is generated.  To enable logging, uncomment the next line or
 // add -DMU_LOG_ENABLED to your compiler switches.
 
-#define MU_LOG_ENABLED
+//#define MU_LOG_ENABLED 1
 
-#ifdef MU_LOG_ENABLED
+
+#if (MU_LOG_ENABLED)
   #define MU_LOG_INIT() mu_log_init()
   #define MU_LOG_SUBSCRIBE(a, b) mu_log_subscribe(a, b)
   #define MU_LOG_UNSUBSCRIBE(a) mu_log_unsubscribe(a)
@@ -177,7 +179,7 @@ typedef enum {
 /**
  * @brief: prototype for uLog subscribers.
  */
-typedef void (*mu_log_function_t)(mu_log_level_t severity, char *msg);
+typedef void (*mu_log_function_t)(mu_log_level_t severity, const char *msg);
 
 // =============================================================================
 // declarations

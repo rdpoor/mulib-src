@@ -32,7 +32,6 @@ extern "C" {
 // =============================================================================
 // includes
 
-#include "mu_types.h"
 #include <stdbool.h>
 #include <string.h>
 
@@ -54,6 +53,24 @@ typedef struct {
   size_t capacity;
   size_t count;
 } mu_pstore_t;
+
+
+/**
+ * @brief Signature for comparison function.
+ *
+ * A comparison function should return a negative, zero, or positive value if
+ * the item referred to by item1 is less than, equal to , or greater than the
+ * item referred to by item2.
+ */
+typedef int (*mu_pstore_compare_fn)(void *item1, void *item2);
+
+/**
+ * @brief Signature for filter function.
+ *
+ * A filter function should return true if the indicated item matches a user-
+ * specified criterion.
+ */
+typedef bool (*mu_pstore_filter_fn)(void *item);
 
 // =============================================================================
 // declarations
@@ -206,7 +223,7 @@ mu_pstore_err_t mu_pstore_insert_at(mu_pstore_t *pstore, mu_pstore_item_t item, 
 mu_pstore_item_t mu_pstore_delete(mu_pstore_t *pstore, mu_pstore_item_t item);
 
 /**
- * @brief Insert an item at the given index.
+ * @brief Delete an item at the given index.
  *
  * mu_pstore_delete_at() removes an item at the given index of the pstore,
  * returning the item by reference in *item.
@@ -219,6 +236,22 @@ mu_pstore_item_t mu_pstore_delete(mu_pstore_t *pstore, mu_pstore_item_t item);
  *         greater than mu_pstore_count(), MU_PSTORE_ERR_NONE otherwise.
  */
 mu_pstore_err_t mu_pstore_delete_at(mu_pstore_t *pstore, mu_pstore_item_t *item, size_t index);
+
+/**
+ * @brief In-place filtering of a pstore, leaving only those that satisfy the
+ * given filter functins.
+ *
+ * The user-supplied filter function is called with a void * argument, and
+ * should return true if that element is to be preserved and false if it is
+ * to be removed from the pstore.
+ *
+ * TODO: NOT YET IMPLEMENTED.
+ *
+ * @param pstore The pstore structure.
+ * @param match The user supplied filter function.
+ * @return MU_PSTORE_ERR_NONE.
+ */
+mu_pstore_err_t mu_pstore_filter(mu_pstore_t *pstore, mu_pstore_filter_fn match);
 
 /**
  * @brief Insert an item into a sorted list according to a user-supplied
@@ -239,7 +272,7 @@ mu_pstore_err_t mu_pstore_delete_at(mu_pstore_t *pstore, mu_pstore_item_t *item,
  * @return MU_PSTORE_ERR_FULL if the pstore was full prior to the call to
  *         mu_pstore_insert_sorted, MU_PSTORE_ERR_NONE otherwise.
  */
-mu_pstore_err_t mu_pstore_insert_sorted(mu_pstore_t *pstore, mu_pstore_item_t item, mu_compare_fn cmp);
+mu_pstore_err_t mu_pstore_insert_sorted(mu_pstore_t *pstore, mu_pstore_item_t item, mu_pstore_compare_fn cmp);
 
 /**
  * @brief In-place sorting of a items in a pstore.
@@ -257,7 +290,7 @@ mu_pstore_err_t mu_pstore_insert_sorted(mu_pstore_t *pstore, mu_pstore_item_t it
  * @param cmp The user supplied comparison function.
  * @return MU_PSTORE_ERR_NONE
  */
-mu_pstore_err_t mu_pstore_sort(mu_pstore_t *pstore, mu_compare_fn cmp);
+mu_pstore_err_t mu_pstore_sort(mu_pstore_t *pstore, mu_pstore_compare_fn cmp);
 
 #ifdef __cplusplus
 }

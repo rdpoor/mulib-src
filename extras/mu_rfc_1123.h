@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 R. Dunbar Poor <rdpoor@gmail.com>
+ * Copyright (c) 2021 Klatu Networks, Inc
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,52 +22,50 @@
  * SOFTWARE.
  */
 
-#ifndef MU_TYPES_H_
-#define MU_TYPES_H_
+#ifndef _PARSE_RFC_1123_H_
+#define _PARSE_RFC_1123_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // =============================================================================
-// includes
+// Includes
 
-#include <stdbool.h>
-
-// =============================================================================
-// types and definitions
-
-/**
- * @brief Signature for comparison function.
- *
- * A comparison function should return a negative, zero, or positive value if
- * the item referred to by item1 is less than, equal to , or greater than the
- * item referred to by item2.
- */
-typedef int (*mu_compare_fn)(void *item1, void *item2);
-
-/**
- * @brief Signature for a deferred function.
- *
- * A deferred function will be called with its context argument and a user-
- * supplied argument.  The value returned is implementation dependent, but two
- * common choices are the context and NULL.
- */
-typedef void *(*mu_deferred_fn)(void *context, void *arg);
-
-/**
- * @brief Signature for filter function.
- *
- * A filter function should return true if the indicated item matches a user-
- * specified criterion.
- */
-typedef bool (*mu_filter_fn)(void *item);
+#include <time.h>  // for struct tm
 
 // =============================================================================
-// declarations
+// Types and definitions
+
+#define MU_RFC_1123_MAX_LEN 30  // includes null terminator
+
+// =============================================================================
+// Declarations
+
+/**
+ * @brief Parse a date in RFC 1123 format and store the restults in a struct tm.
+ *
+ * Note: an RFC 1123 date has the following form:
+ *
+ *    Tue, 18 Jun 2019 16:06:21 GMT
+ *
+ * This parser is strict:
+ * - Exactly one space appears between tokens
+ * - Day and Month fields are Capitalized, GMT is UPPER CASE.
+ *
+ * On success, returns a pointer to the first character following "GMT" and the
+ * struct tm is filled in.  On any error, returns NULL and struct tm is cleared.
+ *
+ * @param s Pointer to string to be parsed
+ * @param tm time structure to be filled in
+ * @return Pointer to character following "GMT" on success, NULL otherwise.
+ */
+const char *mu_rfc_1123_str_to_tm(const char *s, struct tm *tm);
+
+char *mu_rfc_1123_tm_to_str(const struct tm *tm, char *s, int maxlen);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* #ifndef MU_TYPES_H_ */
+#endif /* #ifndef _PARSE_RFC_1123_H_ */

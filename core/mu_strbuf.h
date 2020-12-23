@@ -30,46 +30,40 @@ extern "C" {
 #endif
 
 // =============================================================================
-// includes
+// Includes
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 // =============================================================================
-// types and definitions
-
-typedef char mu_strbuf_data_t;
-
-typedef enum {
-  MU_STR_ERR_NONE,
-  MU_STR_ERR_INDEX
-} mu_strbuf_err_t;
+// Types and definitions
 
 typedef struct {
-  mu_strbuf_data_t *data;  // backing store
-  size_t capacity;      // length of backing store
+  union {
+    const uint8_t *rdata; // readonly storage
+    uint8_t *wdata;       // writeable storage
+  };
+  size_t capacity;
 } mu_strbuf_t;
 
-
 // =============================================================================
-// declarations
+// Declarations
 
-mu_strbuf_t *mu_strbuf_init(mu_strbuf_t *s, mu_strbuf_data_t *data, size_t capacity);
+mu_strbuf_t *mu_strbuf_init_ro(mu_strbuf_t *buf,
+                               const uint8_t *const rdata,
+                               size_t capacity);
 
-mu_strbuf_t *mu_strbuf_init_from_cstr(mu_strbuf_t *s, const char *cstr);
+mu_strbuf_t *mu_strbuf_init_wr(mu_strbuf_t *buf,
+                               uint8_t *wdata,
+                               size_t capacity);
 
-mu_strbuf_t *mu_strbuf_to_cstr(mu_strbuf_t *s, char *cstr, size_t cstr_length);
+mu_strbuf_t *mu_strbuf_init_from_cstr(mu_strbuf_t *buf, const char *const cstr);
 
-size_t mu_strbuf_capacity(mu_strbuf_t *s);
+const uint8_t *const mu_strbuf_rdata(const mu_strbuf_t *buf);
 
-mu_strbuf_data_t *mu_strbuf_data(mu_strbuf_t *s);
+uint8_t *mu_strbuf_wdata(const mu_strbuf_t *buf);
 
-mu_strbuf_err_t mu_strbuf_ref(mu_strbuf_t *s, size_t index, mu_strbuf_data_t **p);
-
-mu_strbuf_err_t mu_strbuf_get(mu_strbuf_t *s, size_t index, mu_strbuf_data_t *d);
-
-mu_strbuf_err_t mu_strbuf_put(mu_strbuf_t *s, size_t index, mu_strbuf_data_t d);
+size_t mu_strbuf_capacity(const mu_strbuf_t *const buf);
 
 #ifdef __cplusplus
 }

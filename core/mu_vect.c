@@ -25,7 +25,7 @@
 // =============================================================================
 // includes
 
-#include "mu_vect.h"
+#include "mulib.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -263,7 +263,7 @@ static void swap(mu_vect_t *vect, int a, int b) {
   char *pa = (char *)ref(vect, a);
   char *pb = (char *)ref(vect, b);
 
-  for (int i=0; i<mu_vect_element_size(vect); i++) {
+  for (size_t i=0; i<mu_vect_element_size(vect); i++) {
     temp = pa[i];
     pa[i] = pb[i];
     pb[i] = temp;

@@ -25,7 +25,7 @@
 // =============================================================================
 // includes
 
-#include "mu_bitvec.h"
+#include "mulib.h"
 #include <stdlib.h>
 #include <stddef.h>
 
@@ -42,7 +42,7 @@ typedef void (*bit_op)(uint8_t *p, uint8_t mask);
 // =============================================================================
 // local (forward) declarations
 
-static mu_bitvec_t *write_bit_op(mu_bitvec_t *bv, int index, bit_op op);
+static mu_bitvec_t *write_bit_op(mu_bitvec_t *bv, size_t index, bit_op op);
 static mu_bitvec_t *write_all_op(mu_bitvec_t *bv, bit_op op);
 static void set_bit_op(uint8_t *p, uint8_t mask);
 static void clear_bit_op(uint8_t *p, uint8_t mask);
@@ -75,7 +75,7 @@ size_t mu_bitvec_byte_count(mu_bitvec_t *bv) {
 
 // operations on single bits. Return null on indexing error.
 
-mu_bitvec_t *mu_bitvec_write_bit(mu_bitvec_t *bv, int i, bool value) {
+mu_bitvec_t *mu_bitvec_write_bit(mu_bitvec_t *bv, size_t i, bool value) {
   if (value) {
     return mu_bitvec_set_bit(bv, i);
   } else {
@@ -83,7 +83,7 @@ mu_bitvec_t *mu_bitvec_write_bit(mu_bitvec_t *bv, int i, bool value) {
   }
 }
 
-bool mu_bitvec_read_bit(mu_bitvec_t *bv, int index) {
+bool mu_bitvec_read_bit(mu_bitvec_t *bv, size_t index) {
   uint8_t *b, m;
   if (index >= bv->length) {
     return false;  // silent error
@@ -93,15 +93,15 @@ bool mu_bitvec_read_bit(mu_bitvec_t *bv, int index) {
   return *b & m;
 }
 
-mu_bitvec_t *mu_bitvec_set_bit(mu_bitvec_t *bv, int i) {
+mu_bitvec_t *mu_bitvec_set_bit(mu_bitvec_t *bv, size_t i) {
   return write_bit_op(bv, i, set_bit_op);
 }
 
-mu_bitvec_t *mu_bitvec_clear_bit(mu_bitvec_t *bv, int i) {
+mu_bitvec_t *mu_bitvec_clear_bit(mu_bitvec_t *bv, size_t i) {
   return write_bit_op(bv, i, clear_bit_op);
 }
 
-mu_bitvec_t *mu_bitvec_toggle_bit(mu_bitvec_t *bv, int i) {
+mu_bitvec_t *mu_bitvec_toggle_bit(mu_bitvec_t *bv, size_t i) {
   return write_bit_op(bv, i, toggle_bit_op);
 }
 
@@ -125,7 +125,7 @@ mu_bitvec_t *mu_bitvec_copy(mu_bitvec_t *dst, mu_bitvec_t *src) {
   size_t dst_len = mu_bitvec_length(dst);
   size_t src_len = mu_bitvec_length(src);
   size_t len = MIN(dst_len, src_len);
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     mu_bitvec_write_bit(dst, i, mu_bitvec_read_bit(src, i));
   }
   return dst;
@@ -135,7 +135,7 @@ mu_bitvec_t *mu_bitvec_and(mu_bitvec_t *dst, mu_bitvec_t *src) {
   size_t dst_len = mu_bitvec_length(dst);
   size_t src_len = mu_bitvec_length(src);
   size_t len = MIN(dst_len, src_len);
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     // could be much, much more efficient.
     bool value = mu_bitvec_read_bit(dst, i) & mu_bitvec_read_bit(src, i);
     mu_bitvec_write_bit(dst, i, value);
@@ -146,7 +146,7 @@ mu_bitvec_t *mu_bitvec_or(mu_bitvec_t *dst, mu_bitvec_t *src) {
   size_t dst_len = mu_bitvec_length(dst);
   size_t src_len = mu_bitvec_length(src);
   size_t len = MIN(dst_len, src_len);
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     // could be much, much more efficient.  and compact.
     bool value = mu_bitvec_read_bit(dst, i) | mu_bitvec_read_bit(src, i);
     mu_bitvec_write_bit(dst, i, value);
@@ -158,7 +158,7 @@ mu_bitvec_t *mu_bitvec_xor(mu_bitvec_t *dst, mu_bitvec_t *src) {
   size_t dst_len = mu_bitvec_length(dst);
   size_t src_len = mu_bitvec_length(src);
   size_t len = MIN(dst_len, src_len);
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     // could be much, much more efficient.  and compact.
     bool value = mu_bitvec_read_bit(dst, i) ^ mu_bitvec_read_bit(src, i);
     mu_bitvec_write_bit(dst, i, value);
@@ -170,7 +170,7 @@ bool mu_bitvec_equals(mu_bitvec_t *bv1, mu_bitvec_t *bv2) {
   size_t bv1_len = mu_bitvec_length(bv1);
   size_t bv2_len = mu_bitvec_length(bv2);
   size_t len = MIN(bv1_len, bv2_len);
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     if (mu_bitvec_read_bit(bv1, i) != mu_bitvec_read_bit(bv2, i)) {
       return false;
     }
@@ -180,7 +180,7 @@ bool mu_bitvec_equals(mu_bitvec_t *bv1, mu_bitvec_t *bv2) {
 
 bool mu_bitvec_is_all_ones(mu_bitvec_t *bv) {
   size_t len = mu_bitvec_length(bv);
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     if (mu_bitvec_read_bit(bv, i) == false) {
       return false;
     }
@@ -190,7 +190,7 @@ bool mu_bitvec_is_all_ones(mu_bitvec_t *bv) {
 
 bool mu_bitvec_is_all_zeros(mu_bitvec_t *bv) {
   size_t len = mu_bitvec_length(bv);
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     if (mu_bitvec_read_bit(bv, i) == true) {
       return false;
     }
@@ -201,7 +201,7 @@ bool mu_bitvec_is_all_zeros(mu_bitvec_t *bv) {
 int mu_bitvec_count_ones(mu_bitvec_t *bv) {
   size_t len = mu_bitvec_length(bv);
   int total = 0;
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     if (mu_bitvec_read_bit(bv, i) == true) {
       total += 1;
     }
@@ -212,7 +212,7 @@ int mu_bitvec_count_ones(mu_bitvec_t *bv) {
 int mu_bitvec_count_zeros(mu_bitvec_t *bv) {
   size_t len = mu_bitvec_length(bv);
   int total = 0;
-  for (int i=0; i<len; i++) {
+  for (size_t i=0; i<len; i++) {
     if (mu_bitvec_read_bit(bv, i) == false) {
       total += 1;
     }
@@ -223,7 +223,7 @@ int mu_bitvec_count_zeros(mu_bitvec_t *bv) {
 // =============================================================================
 // local (static) code
 
-static mu_bitvec_t *write_bit_op(mu_bitvec_t *bv, int index, bit_op op) {
+static mu_bitvec_t *write_bit_op(mu_bitvec_t *bv, size_t index, bit_op op) {
   uint8_t *b, m;
   if (index >= bv->length) {
     return NULL;
@@ -236,7 +236,7 @@ static mu_bitvec_t *write_bit_op(mu_bitvec_t *bv, int index, bit_op op) {
 
 static mu_bitvec_t *write_all_op(mu_bitvec_t *bv, bit_op op) {
   uint8_t *b, m;
-  for (int index=0; index<bv->length; index++) {
+  for (size_t index=0; index<bv->length; index++) {
     b = &(bv->bits[index/8]);
     m = 1<<(index & 7);
     op(b, m);

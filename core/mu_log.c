@@ -26,11 +26,10 @@
 // =============================================================================
 // includes
 
-#include "mu_log.h"
+#include "mulib.h"
 
 #ifdef MU_LOG_ENABLED // rest of file...
 
-#include "mu_vect.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -50,7 +49,7 @@ typedef struct {
  * @brief Return non-null value if a->fn == b->fn.  Assumes that both a and b
  * are non-NULL and of type subscriber_t *.
  */
-void *function_matches(void *a, void *b);
+static void *function_matches(void *a, void *b);
 
 /**
  * @brief Call subscriber's function with a logging message.
@@ -62,7 +61,7 @@ void *function_matches(void *a, void *b);
  * @param arg Pointer to the severity of the current log message.
  * @return Returns NULL in order for mu_vect_traverse to visit all elements.
  */
-void *broadcast(void *subscriber, void *arg);
+static void *broadcast(void *subscriber, void *arg);
 
 // =============================================================================
 // local storage
@@ -127,13 +126,13 @@ void mu_log_message(mu_log_level_t severity, const char *fmt, ...) {
 // =============================================================================
 // private code
 
-void *function_matches(void *a, void *b) {
+static void *function_matches(void *a, void *b) {
   subscriber_t *as = (subscriber_t *)a;
   subscriber_t *bs = (subscriber_t *)b;
   return as->fn == bs->fn ? a : NULL;
 }
 
-void *broadcast(void *subscriber, void *arg) {
+static void *broadcast(void *subscriber, void *arg) {
   subscriber_t *s = (subscriber_t *)subscriber;
   mu_log_level_t *severity = (mu_log_level_t *)arg;
 

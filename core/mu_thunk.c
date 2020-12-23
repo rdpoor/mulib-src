@@ -26,7 +26,6 @@
 // Includes
 
 #include "mu_thunk.h"
-#include "mu_config.h"
 #include <stddef.h>
 
 // =============================================================================

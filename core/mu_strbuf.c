@@ -26,6 +26,7 @@
 // includes
 
 #include "mu_strbuf.h"
+#include "mulib.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -41,59 +42,35 @@
 // =============================================================================
 // public code
 
-mu_strbuf_t *mu_strbuf_init(mu_strbuf_t *s, mu_strbuf_data_t *data, size_t capacity) {
-  s->data = data;
-  s->capacity = capacity;
-  return s;
+mu_strbuf_t *mu_strbuf_init_ro(mu_strbuf_t *buf,
+                               const uint8_t *const rdata,
+                               size_t capacity) {
+  buf->rdata = rdata;
+  buf->capacity = capacity;
+  return buf;
 }
 
-mu_strbuf_t *mu_strbuf_init_from_cstr(mu_strbuf_t *s, const char *cstr) {
-  s->data = (mu_strbuf_data_t *)cstr;
-  s->capacity = strlen(cstr);  // does not include null termination
-  return s;
+mu_strbuf_t *mu_strbuf_init_wr(mu_strbuf_t *buf,
+                               uint8_t *wdata,
+                               size_t capacity) {
+  buf->wdata = wdata;
+  buf->capacity = capacity;
+  return buf;
 }
 
-mu_strbuf_t *mu_strbuf_to_cstr(mu_strbuf_t *s, char *cstr, size_t cstr_length) {
-  memmove(cstr, s->data, cstr_length-1); // leave one byte for null termination
-  cstr[cstr_length-1] = '\0';            // null terminate
-  return s;
+mu_strbuf_t *mu_strbuf_init_from_cstr(mu_strbuf_t *buf,
+                                      const char *const cstr) {
+  return mu_strbuf_init_ro(buf, (const uint8_t *const)cstr, strlen(cstr));
 }
 
-size_t mu_strbuf_capacity(mu_strbuf_t *s) {
-  return s->capacity;
+const uint8_t *const mu_strbuf_rdata(const mu_strbuf_t *buf) {
+  return buf->rdata;
 }
 
-mu_strbuf_data_t *mu_strbuf_data(mu_strbuf_t *s) {
-  return s->data;
-}
+uint8_t *mu_strbuf_wdata(const mu_strbuf_t *buf) { return buf->wdata; }
 
-mu_strbuf_err_t mu_strbuf_ref(mu_strbuf_t *s, size_t index, mu_strbuf_data_t **p) {
-  if (index >= s->capacity) {
-    *p = NULL;
-    return MU_STR_ERR_INDEX;
-  } else {
-    *p = &s->data[index];
-    return MU_STR_ERR_NONE;
-  }
-}
-
-mu_strbuf_err_t mu_strbuf_get(mu_strbuf_t *s, size_t index, mu_strbuf_data_t *d) {
-  if (index >= s->capacity) {
-    *d = '\0';
-    return MU_STR_ERR_INDEX;
-  } else {
-    *d = s->data[index];
-    return MU_STR_ERR_NONE;
-  }
-}
-
-mu_strbuf_err_t mu_strbuf_put(mu_strbuf_t *s, size_t index, mu_strbuf_data_t d) {
-  if (index >= s->capacity) {
-    return MU_STR_ERR_INDEX;
-  } else {
-    s->data[index] = d;
-    return MU_STR_ERR_NONE;
-  }
+size_t mu_strbuf_capacity(const mu_strbuf_t *const buf) {
+  return buf->capacity;
 }
 
 // =============================================================================

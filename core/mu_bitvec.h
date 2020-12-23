@@ -128,7 +128,7 @@ size_t mu_bitvec_byte_count(mu_bitvec_t *bv);
  * @param i zero-based bit position to read.
  * @return the value of the i'th bit in the bit vector.
  */
-bool mu_bitvec_read_bit(mu_bitvec_t *bv, int i);
+bool mu_bitvec_read_bit(mu_bitvec_t *bv, size_t i);
 
 /**
  * @brief Write a bit in the bit vector.
@@ -138,7 +138,7 @@ bool mu_bitvec_read_bit(mu_bitvec_t *bv, int i);
  * @param value Value to set the i'th bit in the bit vector (true or false).
  * @return On success, return bv.  Return NULL if index is out of range.
  */
-mu_bitvec_t *mu_bitvec_write_bit(mu_bitvec_t *bv, int i, bool value);
+mu_bitvec_t *mu_bitvec_write_bit(mu_bitvec_t *bv, size_t i, bool value);
 
 /**
  * @brief Set a bit in the bit vector to true.
@@ -147,7 +147,7 @@ mu_bitvec_t *mu_bitvec_write_bit(mu_bitvec_t *bv, int i, bool value);
  * @param i zero-based bit position to set.
  * @return On success, return bv.  Return NULL if index is out of range.
  */
-mu_bitvec_t *mu_bitvec_set_bit(mu_bitvec_t *bv, int i);
+mu_bitvec_t *mu_bitvec_set_bit(mu_bitvec_t *bv, size_t i);
 
 /**
  * @brief Set a bit in the bit vector to false.
@@ -156,7 +156,7 @@ mu_bitvec_t *mu_bitvec_set_bit(mu_bitvec_t *bv, int i);
  * @param i zero-based bit position to clear.
  * @return On success, return bv.  Return NULL if index is out of range.
  */
-mu_bitvec_t *mu_bitvec_clear_bit(mu_bitvec_t *bv, int i);
+mu_bitvec_t *mu_bitvec_clear_bit(mu_bitvec_t *bv, size_t i);
 
 /**
  * @brief Invert a bit in the bit vector.
@@ -165,7 +165,7 @@ mu_bitvec_t *mu_bitvec_clear_bit(mu_bitvec_t *bv, int i);
  * @param i zero-based bit position to toggle.
  * @return On success, return bv.  Return NULL if index is out of range.
  */
-mu_bitvec_t *mu_bitvec_toggle_bit(mu_bitvec_t *bv, int i);
+mu_bitvec_t *mu_bitvec_toggle_bit(mu_bitvec_t *bv, size_t i);
 
 // operations on entire vector
 mu_bitvec_t *mu_bitvec_set_all(mu_bitvec_t *bv);

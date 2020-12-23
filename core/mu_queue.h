@@ -37,7 +37,6 @@ extern "C" {
 // includes
 
 #include <stdbool.h>
-#include "mu_types.h"
 #include "mu_list.h"
 
 // =============================================================================

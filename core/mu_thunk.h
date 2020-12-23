@@ -32,8 +32,6 @@ extern "C" {
 // =============================================================================
 // includes
 
-#include "mu_config.h"
-#include "mu_list.h"
 #include "mu_time.h"
 
 // =============================================================================
@@ -52,6 +50,9 @@ typedef struct _mu_thunk {
   mu_thunk_fn fn; // function to call
   void *ctx;      // context to pass when called
 } mu_thunk_t;
+
+// =============================================================================
+// Declarations
 
 mu_thunk_t *mu_thunk_init(mu_thunk_t *thunk, mu_thunk_fn fn, void *ctx);
 

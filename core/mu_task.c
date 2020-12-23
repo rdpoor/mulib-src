@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 R. D. Poor <rdpoor@gmail.com>
+ * Copyright (c) 2020 R. Dunbar Poor <rdpoor@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,9 @@
 // =============================================================================
 // includes
 
-#include "mu_config.h"
+#include "mulib.h"
 #include "mu_task.h"
 #include "mu_thunk.h"
-#include "mu_time.h"
 #include <stddef.h>
 
 // =============================================================================
@@ -44,12 +43,12 @@
 // public code
 
 mu_task_t *mu_task_init(mu_task_t *task,
-                        mu_task_fn fn,
+                        mu_thunk_fn fn,
                         void *ctx,
                         const char *name) {
   task->link.next = NULL;
   task->time = 0;
-  mu_thunk_init(task->thunk, fn, ctx);
+  mu_thunk_init(&task->thunk, fn, ctx);
 #if (MU_TASK_PROFILING)
   task->name = name;
   task->call_count = 0;
@@ -71,16 +70,12 @@ void mu_task_set_time(mu_task_t *task, mu_time_t time) {
   task->time = time;
 }
 
-mu_thunk_t *mu_test_get_thunk(mu_task_t *task) {
-  return &task->thunk;
+mu_thunk_fn mu_task_get_fn(mu_task_t *task) {
+  return mu_thunk_get_fn(&task->thunk);
 }
 
-mu_task_fn mu_task_get_fn(mu_task_t *task) {
-  return mu_thunk_get_fn(task->thunk);
-}
-
-void *mu_task_get_ctx(mu_task_t *task) {
-  return mu_thunk_get_ctx(task->thunk);
+void *mu_task_get_context(mu_task_t *task) {
+  return mu_thunk_get_ctx(&task->thunk);
 }
 
 const char *mu_task_name(mu_task_t *task) {
@@ -96,7 +91,7 @@ void *mu_task_call(mu_task_t *task, void *arg) {
 #if (MU_TASK_PROFILING)
   mu_time_t called_at = mu_time_now();
 #endif
-  void *result = mu_thunk_call(task->thunk);
+  void *result = mu_thunk_call(&task->thunk, arg);
 #if (MU_TASK_PROFILING)
   task->call_count += 1;
   mu_time_dt duration = mu_time_difference(mu_time_now(), called_at);
@@ -120,7 +115,7 @@ mu_time_ms_dt mu_task_max_duration_ms(mu_task_t *task) {
   return mu_time_duration_to_ms(task->max_duration);
 }
 
-#ifdef MU_VM_FLOAT
+#ifdef MU_FLOAT
 mu_time_s_dt mu_task_runtime_s(mu_task_t *task) {
   return mu_time_duration_to_s(task->runtime);
 }
