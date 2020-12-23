@@ -35,6 +35,8 @@
 // =============================================================================
 // Local types and definitions
 
+#define TM_YEAR_OFFSET 1900
+
 // =============================================================================
 // Local (forward) declarations
 
@@ -70,7 +72,7 @@ const char *mu_rfc_1123_str_to_tm(const char *s, struct tm *tm) {
   if (!(s = skip_literal(s, " "))) return NULL;
   if (!(s = parse_int(s, &tm->tm_year, 4))) return NULL;
   // want year - 1900
-  tm->tm_year -= 1900;
+  tm->tm_year -= TM_YEAR_OFFSET;
   if (!(s = skip_literal(s, " "))) return NULL;
   if (!(s = parse_int(s, &tm->tm_hour, 2))) return NULL;
   if (!(s = skip_literal(s, ":"))) return NULL;
@@ -88,7 +90,7 @@ char *mu_rfc_1123_tm_to_str(const struct tm *tm, char *s, int maxlen) {
            &s_days[tm->tm_wday * 3],
            tm->tm_mday,
            &s_months[tm->tm_mon * 3],
-           tm->tm_year + 1900,
+           tm->tm_year + TM_YEAR_OFFSET,
            tm->tm_hour,
            tm->tm_min,
            tm->tm_sec);
@@ -152,6 +154,7 @@ int main(void) {
   char s1[MU_RFC_1123_MAX_LEN];
   const char *s2 = "Tue, 18 Jun 2019 16:06:21 GMT";
 
+  printf("mu_rfc_1123 unit test starting...\n");
   ASSERT((s = mu_rfc_1123_str_to_tm(s2, &tm1)) != NULL);
   ASSERT(s == s2 + strlen(s2));
   ASSERT(tm1.tm_sec == 21);
@@ -159,20 +162,23 @@ int main(void) {
   ASSERT(tm1.tm_hour == 16);
   ASSERT(tm1.tm_mday == 18);
   ASSERT(tm1.tm_mon == 5);
-  ASSERT(tm1.tm_year == 2019);
+  ASSERT(tm1.tm_year + TM_YEAR_OFFSET == 2019);
   ASSERT(tm1.tm_wday == 2);
 
   ASSERT(mu_rfc_1123_str_to_tm("Tux, 18 Jun 2019 16:06:21 GMT", &tm1) == NULL);
-  ASSERT(mu_rfc_1123_str_to_tm("Tux, 1x Jun 2019 16:06:21 GMT", &tm1) == NULL);
-  ASSERT(mu_rfc_1123_str_to_tm("Tux, 18 Jux 2019 16:06:21 GMT", &tm1) == NULL);
-  ASSERT(mu_rfc_1123_str_to_tm("Tux, 18 Jun 201x 16:06:21 GMT", &tm1) == NULL);
-  ASSERT(mu_rfc_1123_str_to_tm("Tux, 18 Jun 2019 1x:06:21 GMT", &tm1) == NULL);
-  ASSERT(mu_rfc_1123_str_to_tm("Tux, 18 Jun 2019 16:0x:21 GMT", &tm1) == NULL);
-  ASSERT(mu_rfc_1123_str_to_tm("Tux, 18 Jun 2019 16:06:2x GMT", &tm1) == NULL);
-  ASSERT(mu_rfc_1123_str_to_tm("Tux, 18 Jun 2019 16:06:21 GMx", &tm1) == NULL);
+  ASSERT(mu_rfc_1123_str_to_tm("Tue, 1x Jun 2019 16:06:21 GMT", &tm1) == NULL);
+  ASSERT(mu_rfc_1123_str_to_tm("Tue, 18 Jux 2019 16:06:21 GMT", &tm1) == NULL);
+  ASSERT(mu_rfc_1123_str_to_tm("Tue, 18 Jun 201x 16:06:21 GMT", &tm1) == NULL);
+  ASSERT(mu_rfc_1123_str_to_tm("Tue, 18 Jun 2019 1x:06:21 GMT", &tm1) == NULL);
+  ASSERT(mu_rfc_1123_str_to_tm("Tue, 18 Jun 2019 16:0x:21 GMT", &tm1) == NULL);
+  ASSERT(mu_rfc_1123_str_to_tm("Tue, 18 Jun 2019 16:06:2x GMT", &tm1) == NULL);
+  ASSERT(mu_rfc_1123_str_to_tm("Tue, 18 Jun 2019 16:06:21 GMx", &tm1) == NULL);
+  ASSERT(mu_rfc_1123_str_to_tm("Tue, 18 Jun 2019 16x06:21 GMT", &tm1) == NULL);
 
+  ASSERT((s = mu_rfc_1123_str_to_tm(s2, &tm1)) != NULL); // reset tm1
   ASSERT((s = mu_rfc_1123_tm_to_str(&tm1, s1, MU_RFC_1123_MAX_LEN)) != NULL);
-  ASSERT(strcmp(s, s1) == 0);
+  ASSERT(strcmp(s, s2) == 0);
+  printf("... mu_rfc_1123 unit test complete.\n");
 }
 
 #endif
