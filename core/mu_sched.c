@@ -46,7 +46,7 @@ typedef struct {
 // =============================================================================
 // local (forward) declarations
 
-static void *default_idle_fn(void *self, void *arg);
+static void default_idle_fn(void *self, void *arg);
 
 static mu_sched_err_t sched_task_at(mu_task_t *task, mu_time_t time);
 
@@ -204,11 +204,10 @@ mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task) {
 // =============================================================================
 // local (static) code
 
-static void *default_idle_fn(void *self, void *arg) {
+static void default_idle_fn(void *self, void *arg) {
   (void)(self);
   (void)(arg);
   // the default idle task doesn't do much...
-  return self;
 }
 
 static mu_sched_err_t sched_task_at(mu_task_t *task, mu_time_t time) {

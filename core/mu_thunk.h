@@ -44,7 +44,7 @@ extern "C" {
  */
 
 // The signature of a mu_thunk function.
-typedef void *(*mu_thunk_fn)(void *ctx, void *arg);
+typedef void (*mu_thunk_fn)(void *ctx, void *arg);
 
 typedef struct _mu_thunk {
   mu_thunk_fn fn; // function to call
@@ -60,7 +60,7 @@ mu_thunk_fn mu_thunk_get_fn(mu_thunk_t *thunk);
 
 void *mu_thunk_get_ctx(mu_thunk_t *thunk);
 
-void *mu_thunk_call(mu_thunk_t *thunk, void *arg);
+void mu_thunk_call(mu_thunk_t *thunk, void *arg);
 
 #ifdef __cplusplus
 }

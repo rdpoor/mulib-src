@@ -33,7 +33,7 @@
 // =============================================================================
 // private declarations
 
-static void *timer_fn(void *ctx, void *arg);
+static void timer_fn(void *ctx, void *arg);
 
 // =============================================================================
 // local storage
@@ -71,12 +71,12 @@ bool mu_timer_is_running(mu_timer_t *timer) { return timer->is_running; }
 // =============================================================================
 // static (local) code
 
-static void *timer_fn(void *ctx, void *arg) {
+static void timer_fn(void *ctx, void *arg) {
   (void)(arg);
   mu_timer_t *timer = (mu_timer_t *)ctx;
   if (!timer->is_running) {
     // timer was previously stopped: don't trigger target_task
-    return NULL;
+    return;
   } else if (timer->does_repeat) {
     // repeat is enabled: schedule next time
     mu_sched_reschedule_in(timer->interval);
@@ -84,6 +84,6 @@ static void *timer_fn(void *ctx, void *arg) {
     // repeat is disabled: stop now
     timer->is_running = false;
   }
-  // trigger the target task.  By convention, sched is user argument.
-  return mu_task_call(timer->target_task, NULL);
+  // trigger the target task.
+  mu_task_call(timer->target_task, NULL);
 }

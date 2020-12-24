@@ -70,7 +70,7 @@ void *mu_task_get_context(mu_task_t *task);
 
 const char *mu_task_name(mu_task_t *task);
 
-void *mu_task_call(mu_task_t *task, void *arg);
+void mu_task_call(mu_task_t *task, void *arg);
 
 #if (MU_TASK_PROFILING)
 

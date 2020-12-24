@@ -50,8 +50,8 @@ mu_thunk_fn mu_thunk_get_fn(mu_thunk_t *thunk) { return thunk->fn; }
 
 void *mu_thunk_get_ctx(mu_thunk_t *thunk) { return thunk->ctx; }
 
-void *mu_thunk_call(mu_thunk_t *thunk, void *arg) {
-  return thunk->fn(thunk->ctx, arg);
+void mu_thunk_call(mu_thunk_t *thunk, void *arg) {
+  thunk->fn(thunk->ctx, arg);
 }
 
 // =============================================================================
