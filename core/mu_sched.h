@@ -51,6 +51,7 @@ typedef enum {
   MU_SCHED_ERR_EMPTY,
   MU_SCHED_ERR_FULL,
   MU_SCHED_ERR_NOT_FOUND,
+  MU_SCHED_ERR_NULL_TASK,  // return value for scheduling null task.
 } mu_sched_err_t;
 
 typedef enum {
@@ -169,7 +170,6 @@ mu_task_t *mu_sched_remove_task(mu_task_t *task);
  * Note: If the task is currently in the schedule, it will be removed and
  * re-scheduled.
  *
- * @param sched The scheduler object.
  * @param task The task to be scheduled.
  * @return MU_SCHED_ERR_NONE.  (Other error returns may be added in the future.)
  */
@@ -181,7 +181,6 @@ mu_sched_err_t mu_sched_task_now(mu_task_t *task);
  * Note: If the task is currently in the schedule, it will be removed and
  * re-scheduled.
  *
- * @param sched The scheduler object.
  * @param task The task to be scheduled.
  * @param at The time at which to run the task.
  * @return MU_SCHED_ERR_NONE.  (Other error returns may be added in the future.)
@@ -194,7 +193,6 @@ mu_sched_err_t mu_sched_task_at(mu_task_t *task, mu_time_t at);
  * Note: If the task is currently in the schedule, it will be removed and
  * re-scheduled.
  *
- * @param sched The scheduler object.
  * @param task The task to be scheduled.
  * @param in The interval after which to run the task.
  * @return MU_SCHED_ERR_NONE.  (Other error returns may be added in the future.)
@@ -207,7 +205,6 @@ mu_sched_err_t mu_sched_task_in(mu_task_t *task, mu_time_dt in);
  * Note: If there are other runnable tasks, the task will be scheduled after
  * they have run: they get a chance to run first.
  *
- * @param sched The scheduler object.
  * @return MU_SCHED_ERR_NOT_FOUND if there is no current task, MU_SCHED_ERR_NONE
  * otherwise.
  */
@@ -219,7 +216,6 @@ mu_sched_err_t mu_sched_reschedule_now(void);
  * Note that to avoid drift, this increments the task's time rather than
  * the current time.
  *
- * @param sched The scheduler object.
  * @param in The interval after which to run the task.
  * @return MU_SCHED_ERR_NOT_FOUND if there is no current task, MU_SCHED_ERR_NONE
  * otherwise.
@@ -232,7 +228,6 @@ mu_sched_err_t mu_sched_reschedule_in(mu_time_dt in);
  * Note: The task will be safely queued and will be scheduled to run at the next
  * call to sched_step().
  *
- * @param sched The scheduler object.
  * @param task The task to be scheduled.
  * @return MU_SCHED_ERR_NONE.  (Other error returns may be added in the future.)
  */

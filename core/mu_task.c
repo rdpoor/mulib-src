@@ -87,6 +87,10 @@ const char *mu_task_name(mu_task_t *task) {
 }
 
 void mu_task_call(mu_task_t *task, void *arg) {
+  if (task == NULL) {
+    // allow null task arg => no-op
+    return;
+  }
 
 #if (MU_TASK_PROFILING)
   mu_time_t called_at = mu_time_now();

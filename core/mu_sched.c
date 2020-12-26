@@ -212,7 +212,7 @@ static void default_idle_fn(void *self, void *arg) {
 
 static mu_sched_err_t sched_task_at(mu_task_t *task, mu_time_t time) {
   if (!task) {
-    return MU_SCHED_ERR_NOT_FOUND;
+    return MU_SCHED_ERR_NULL_TASK;  // make sure its what user intended.
   }
   // TODO: decide if there are any cases where it's NOT necessary to check
   // that task is already scheduled.  Until then, play it safe...
