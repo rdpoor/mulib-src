@@ -66,7 +66,7 @@ extern "C" {
  * DEFINE_MU_LOG_LEVEL(MU_LOG_TRACE_LEVEL, "TRACE") \
  * DEFINE_MU_LOG_LEVEL(MU_LOG_DEBUG_LEVEL, "DEBUG") \
  * DEFINE_MU_LOG_LEVEL(MU_LOG_INFO_LEVEL, "INFO") \
- * DEFINE_MU_LOG_LEVEL(MU_LOG_WARNING_LEVEL, "WARNING") \
+ * DEFINE_MU_LOG_LEVEL(MU_LOG_WARN_LEVEL, "WARNING") \
  * DEFINE_MU_LOG_LEVEL(MU_LOG_ERROR_LEVEL, "ERROR") \
  * DEFINE_MU_LOG_LEVEL(MU_LOG_CRITICAL_LEVEL, "CRITICAL")
  * @endcode
@@ -122,7 +122,7 @@ extern "C" {
 DEFINE_MU_LOG_LEVEL(MU_LOG_TRACE_LEVEL, "TRACE") \
 DEFINE_MU_LOG_LEVEL(MU_LOG_DEBUG_LEVEL, "DEBUG") \
 DEFINE_MU_LOG_LEVEL(MU_LOG_INFO_LEVEL, "INFO") \
-DEFINE_MU_LOG_LEVEL(MU_LOG_WARNING_LEVEL, "WARNING") \
+DEFINE_MU_LOG_LEVEL(MU_LOG_WARN_LEVEL, "WARNING") \
 DEFINE_MU_LOG_LEVEL(MU_LOG_ERROR_LEVEL, "ERROR") \
 DEFINE_MU_LOG_LEVEL(MU_LOG_CRITICAL_LEVEL, "CRITICAL")
 
@@ -147,7 +147,7 @@ typedef enum {
   #define MU_LOG_TRACE(...) mu_log_message(MU_LOG_TRACE_LEVEL, __VA_ARGS__)
   #define MU_LOG_DEBUG(...) mu_log_message(MU_LOG_DEBUG_LEVEL, __VA_ARGS__)
   #define MU_LOG_INFO(...) mu_log_message(MU_LOG_INFO_LEVEL, __VA_ARGS__)
-  #define MU_LOG_WARNING(...) mu_log_message(MU_LOG_WARNING_LEVEL, __VA_ARGS__)
+  #define MU_LOG_WARN(...) mu_log_message(MU_LOG_WARN_LEVEL, __VA_ARGS__)
   #define MU_LOG_ERROR(...) mu_log_message(MU_LOG_ERROR_LEVEL, __VA_ARGS__)
   #define MU_LOG_CRITICAL(...) mu_log_message(MU_LOG_CRITICAL_LEVEL, __VA_ARGS__)
 #else
@@ -159,7 +159,7 @@ typedef enum {
   #define MU_LOG_TRACE(f, ...) do {} while(0)
   #define MU_LOG_DEBUG(f, ...) do {} while(0))
   #define MU_LOG_INFO(f, ...) do {} while(0)
-  #define MU_LOG_WARNING(f, ...) do {} while(0)
+  #define MU_LOG_WARN(f, ...) do {} while(0)
   #define MU_LOG_ERROR(f, ...) do {} while(0)
   #define MU_LOG_CRITICAL(f, ...) do {} while(0)
 #endif

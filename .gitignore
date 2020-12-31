@@ -1,3 +1,6 @@
+# Platform is not part of distro...
+platform/*
+
 # Prerequisites
 *.d
 
