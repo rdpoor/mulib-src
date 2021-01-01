@@ -60,12 +60,13 @@ typedef int32_t mu_time_ms_dt;
 // =============================================================================
 // Everything below this line is deduced from the settings above this line.
 
-#ifndef ASSERT
+//#ifndef ASSERT
 //#define ASSERT(expr) do {} while(0)
-#define ASSERT(expr) mu_test_assert((expr), #expr, __FILE__, __LINE__)
-#endif
+//#define ASSERT(expr) mu_test_assert((expr), #expr, __FILE__, __LINE__)
+//#endif
 
 #ifdef MU_TASK_PROFILING
+#undef MU_TASK_PROFILING
 #define MU_TASK_PROFILING (1)
 #else
 #define MU_TASK_PROFILING (0)

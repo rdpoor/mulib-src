@@ -1,191 +1,128 @@
 /**
- * A POSIX-compliant implementation for mu_time.c
+ * MIT License
  *
- * Note that this implementation represents time in seconds in a double.
+ * Copyright (c) 2020 R. Dunbar Poor <rdpoor@gmail.com>
  *
- * To compile and run the in-file unit tests, make sure that the mulib directory
- * is available and at the same level as mulib-test.  In a terminal wndow, type:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *  cc -Wall -g -I.. -I../../../mulib/src/platform -o mu_time mu_time.c && ./mu_time && rm ./mu_time
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * R. D. Poor <rdpoor@gmail.com>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
-#include "mu_config.h"     // must come first
-#include "mu_time.h"       // included from mulib/src/platform/
-#include "time.h"          // posix time functions
+// =============================================================================
+// includes
 
-/**
- * @brief Initialize the time system.  Must be called before any other time
- * functions are called.
- */
+
+#include "mulib.h"
+#include "atmel_start.h"
+
+// =============================================================================
+// private types and definitions
+
+// =============================================================================
+// private declarations
+
+static void rtc_cb_trampoline(struct calendar_dev *const dev);
+
+static int quo_rounded(int x, int y);
+
+// =============================================================================
+// local storage
+
+#ifdef MU_FLOAT
+MU_FLOAT s_rtc_period;
+#endif
+
+// =============================================================================
+// public code
+
 void mu_time_init(void) {
-  // no initialization required
+  // Initialize the RTC.  Use CALENDAR_0 since that's the only published
+  // interface for interacting with the underlying RTC.
+  calendar_enable(&CALENDAR_0); // start RTC
+  _calendar_register_callback(&CALENDAR_0.device, rtc_cb_trampoline);
+
+#ifdef MU_FLOAT
+  s_rtc_period = 1.0 / (MU_FLOAT)RTC_FREQUENCY;
+#endif
 }
 
-/**
- * @brief Get the current system time.
- *
- * @return A value representing the current time.
- */
-mu_time_t mu_time_now() {
-  struct timespec now;
-  clock_gettime(CLOCK_REALTIME, &now);
-  return now.tv_sec + now.tv_nsec / 1000000000.0;
+mu_time_t mu_time_now(void) {
+  return hri_rtcmode0_read_COUNT_COUNT_bf(CALENDAR_0.device.hw);
 }
 
-/**
- * @brief Add a time and a duration.
- *
- * `mu_time_offset` adds a time and a duration to produce a new time object.
- *
- * @param t1 a time object
- * @param dt a duration object
- * @return t1 offset by dt
- */
-mu_time_t mu_time_offset(mu_time_t t1, mu_time_dt dt) {
-  return t1 + dt;
+mu_time_t mu_time_offset(mu_time_t t, mu_time_dt dt) {
+  return t + dt;
 }
 
-/**
- * @brief Take the difference between two time objects
- *
- * `mu_time_difference` subtracts t2 from t1 to produce a duration object.
- *
- * @param t1 A time object
- * @param t2 A time object
- * @return (t1-t2) as a duration object
- */
 mu_time_dt mu_time_difference(mu_time_t t1, mu_time_t t2) {
   return t1 - t2;
 }
 
-/**
- * @brief Return true if t1 is strictly before t2
- *
- * Note that if you want to know if t1 is before or equal to t2, you can use the
- * construct `!mu_time_follows(t2, t1)``
- *
- * @param t1 A time object
- * @param t2 A time object
- * @return true if t1 is strictly before t2, false otherwise.
- */
 bool mu_time_precedes(mu_time_t t1, mu_time_t t2) {
-  return t1 < t2;
+  volatile mu_time_dt dt = mu_time_difference(t1, t2);
+  return dt < 0;
 }
 
-/**
- * @brief Return true if t1 is equal to t2
- *
- * @param t1 A time object
- * @param t2 A time object
- * @return true if t1 equals t2, false otherwise.
- */
 bool mu_time_equals(mu_time_t t1, mu_time_t t2) {
   return t1 == t2;
 }
 
-/**
- * @brief Return true if t1 is strictly after t2
- *
- * Note that if you want to know if t1 is equal to or after t2, you can use the
- * construct `!mu_time_precedes(t2, t1)``
- *
- * @param t1 A time object
- * @param t2 A time object
- * @return true if t1 is strictly after t2, false otherwise.
- */
 bool mu_time_follows(mu_time_t t1, mu_time_t t2) {
-  return t1 > t2;
+  mu_time_dt dt = mu_time_difference(t2, t1);
+  return dt < 0;
 }
 
-/**
- * @brief Convert a duration to milliseconds.
- *
- * @param dt A duration object
- * @return The duration in seconds
- */
-mu_time_ms_dt mu_time_duration_to_ms(mu_time_dt dt) {
-  return dt * 1000.0;
-}
-
-/**
- * @brief Convert milliseconds to a duration
- *
- * @param ms The duration in milliseconds
- * @return A duration object
- */
 mu_time_dt mu_time_ms_to_duration(mu_time_ms_dt ms) {
-  return ms / 1000.0;
+  return quo_rounded(ms * RTC_FREQUENCY, 1000);
+}
+
+mu_time_ms_dt mu_time_duration_to_ms(mu_time_dt dt) {
+  return quo_rounded(dt * 1000, RTC_FREQUENCY);
 }
 
 #ifdef MU_FLOAT
-/**
- * @brief Convert a duration to seconds.
- *
- * @param dt A duration object
- * @return The duration in seconds
- */
+
 MU_FLOAT mu_time_duration_to_s(mu_time_dt dt) {
-  return dt;
+  return dt * s_rtc_period;
 }
 
-/**
- * @brief Convert seconds to a duration.
- *
- * @param s The duration in seconds
- * @return A duration object
- */
-mu_time_dt mu_time_s_to_duration(MU_FLOAT s) {
-  return s;
+mu_time_dt mu_time_s_to_duration(MU_FLOAT seconds) {
+  return seconds / s_rtc_period;
 }
 
 #endif
 
-//#define MU_TIME_TEST
-#ifdef MU_TIME_TEST // rest of file
+// =============================================================================
+// local (static) code
 
-#include <stdio.h>
-#include <assert.h>
-
-int main(void) {
-  mu_time_t t1, t2;
-  mu_time_dt dt;
-  mu_time_ms_dt ms;
-  mu_float_t s;
-
-  printf("Starting mu_time unit tests...");
-
-  mu_time_init();
-  t1 = mu_time_now();
-  t2 = mu_time_offset(t1, 1);
-  assert(mu_time_difference(t2, t1) == 1);
-
-  assert(mu_time_precedes(t1, t2) == true);
-  assert(mu_time_equals(t1, t2) == false);
-  assert(mu_time_follows(t1, t2) == false);
-
-  assert(mu_time_precedes(t2, t1) == false);
-  assert(mu_time_equals(t2, t1) == false);
-  assert(mu_time_follows(t2, t1) == true);
-
-  assert(mu_time_equals(t1, t1) == true);
-
-  dt = mu_time_ms_to_duration(1000);
-  t2 = mu_time_offset(t1, dt);
-  ms = mu_time_duration_to_ms(mu_time_difference(t2, t1));
-  assert(ms == 1000);
-
-  dt = mu_time_s_to_duration(1.0);
-  t2 = mu_time_offset(t1, dt);
-  s = mu_time_duration_to_s(mu_time_difference(t2, t1));
-  assert(s == 1.0);
-
-  printf("done.\r\n");
-
-  return 0;
+static void rtc_cb_trampoline(struct calendar_dev *const dev) {
+  // Arrive here when the RTC count register matches the RTC compare register.
+  // This will wake the processor from sleep...
 }
 
-
-
-#endif // #ifdef MU_TIME_TEST
+// See https://stackoverflow.com/a/18067292/558639
+//
+static int quo_rounded(int x, int y) {
+  // What does it all mean?
+  //   (x < 0) is false (zero) if x is non-negative
+  //   (y < 0) is false (zero) if x is non-negative
+  //   (x < 0) ^ (y < 0) is true if x and y have opposite signs
+  //   x/y would be the quotient, but it is truncated towards zero.  To round:
+  //   (x + y/2)/y is the rounded quotient when x and y have the same sign
+  //   (x - y/2)/y is the rounded quotient when x and y have opposite signs
+  return ((x < 0) ^ (y < 0)) ? ((x - y/2)/y) : ((x + y/2)/y);
+}

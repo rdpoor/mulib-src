@@ -51,8 +51,8 @@ typedef struct _mu_task {
 #if (MU_TASK_PROFILING)
   const char *name;        // user defined task name
   unsigned int call_count; // # of times task is called
-  mu_time_dt runtime;      // accumulated time spent running the task
-  mu_time_dt max_duration; // max time spend running the task
+  MU_FLOAT runtime;      // accumulated time spent running the task
+  MU_FLOAT max_duration; // max time spend running the task
 #endif
 } mu_task_t;
 
@@ -81,9 +81,9 @@ mu_time_ms_dt mu_task_runtime_ms(mu_task_t *task);
 mu_time_ms_dt mu_task_max_duration_ms(mu_task_t *task);
 
 #ifdef MU_FLOAT
-mu_time_s_dt mu_task_runtime_s(mu_task_t *task);
+MU_FLOAT mu_task_runtime_s(mu_task_t *task);
 
-mu_time_s_dt mu_task_max_duration_s(mu_task_t *task);
+MU_FLOAT mu_task_max_duration_s(mu_task_t *task);
 #endif
 
 #endif
