@@ -22,9 +22,9 @@
  * SOFTWARE.
  */
 
-//#error "Replace mu_config.h with your platform-specific file"
+#error "Replace mu_config.h with your platform-specific file"
 
-//#if 0  // entire file
+#if 0  // entire file
 
 #ifndef _MU_CONFIG_H_
 #define _MU_CONFIG_H_
@@ -93,4 +93,4 @@ typedef int32_t mu_time_ms_dt;
 
 #endif /* #ifndef _MU_CONFIG_H_ */
 
-//#endif // #if 0
+#endif // #if 0
