@@ -33,7 +33,15 @@
 // =============================================================================
 // private declarations
 
-static void timer_fn(void *ctx, void *arg);
+/**
+ * Implementation note: since we anticipate that timers will be frequently used,
+ * we want to minimize the size of the timer context.  We do this by providing
+ * two functions: one_shot_fn and periodic_fn in order to eliminate a boolean in
+ * the context.
+ */
+static void one_shot_fn(void *ctx, void *arg);
+static void periodic_fn(void *ctx, void *arg);
+static void trigger_aux(void *ctx, void *arg, bool repeat);
 
 // =============================================================================
 // local storage
@@ -41,49 +49,51 @@ static void timer_fn(void *ctx, void *arg);
 // =============================================================================
 // public code
 
-mu_timer_t *mu_timer_init(mu_timer_t *timer, mu_task_t *target_task) {
-  mu_task_init(&timer->timer_task, timer_fn, timer, "TimerTask");
+mu_timer_t *mu_timer_one_shot(mu_timer_t *timer, mu_task_t *target_task) {
+  mu_task_init(&timer->timer_task, one_shot_fn, timer, "One Shot");
   timer->target_task = target_task;
-  timer->is_running = false;
   return timer;
 }
 
-mu_timer_t *
-mu_timer_start(mu_timer_t *timer, mu_time_dt interval, bool repeat) {
-  mu_timer_stop(timer);
+mu_timer_t *mu_timer_periodic(mu_timer_t *timer, mu_task_t *target_task) {
+  mu_task_init(&timer->timer_task, periodic_fn, timer, "Periodic");
+  timer->target_task = target_task;
+  return timer;
+}
+
+mu_timer_t *mu_timer_start(mu_timer_t *timer, mu_time_dt interval) {
   timer->interval = interval;
-  timer->does_repeat = repeat;
-  timer->is_running = true;
   mu_sched_task_in(&timer->timer_task, interval);
   return timer;
 }
 
 mu_timer_t *mu_timer_stop(mu_timer_t *timer) {
-  if (timer->is_running) {
-    mu_sched_remove_task(&timer->timer_task);
-  }
-  timer->is_running = false;
+  mu_sched_remove_task(&timer->timer_task);
   return timer;
 }
 
-bool mu_timer_is_running(mu_timer_t *timer) { return timer->is_running; }
+bool mu_timer_is_running(mu_timer_t *timer) {
+  return mu_sched_get_task_status(&timer->timer_task) !=
+         MU_SCHED_TASK_STATUS_IDLE;
+}
 
 // =============================================================================
 // static (local) code
 
-static void timer_fn(void *ctx, void *arg) {
-  (void)(arg);
+static void one_shot_fn(void *ctx, void *arg) {
+  trigger_aux(ctx, arg, false);
+}
+
+static void periodic_fn(void *ctx, void *arg) {
+  trigger_aux(ctx, arg, true);
+}
+
+static void trigger_aux(void *ctx, void *arg, bool repeat) {
   mu_timer_t *timer = (mu_timer_t *)ctx;
-  if (!timer->is_running) {
-    // timer was previously stopped: don't trigger target_task
-    return;
-  } else if (timer->does_repeat) {
-    // repeat is enabled: schedule next time
+  (void)(arg);
+
+  if (repeat) {
     mu_sched_reschedule_in(timer->interval);
-  } else {
-    // repeat is disabled: stop now
-    timer->is_running = false;
   }
-  // trigger the target task.
-  mu_task_call(timer->target_task, NULL);
+  mu_task_call(timer->target_task, timer);
 }
