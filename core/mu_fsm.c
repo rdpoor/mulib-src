@@ -60,9 +60,9 @@ void mu_fsm_advance(mu_fsm_t *fsm, int state) { fsm->state = state; }
 
 const char *mu_fsm_state_name(mu_fsm_t *fsm, int state) {
   if (fsm->names) {
-    if (fsm->state < fsm->n_states) {
+    if (state < fsm->n_states) {
       // valid state
-      return fsm->names[fsm->state];
+      return fsm->names[state];
     } else {
       // state is out of range.
       return "unknown state";
