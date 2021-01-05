@@ -42,25 +42,29 @@
 void mu_fsm_init(mu_fsm_t *fsm,
                  mu_fsm_state_fn_t fns[],
                  const char *names[],
-                 size_t n_states) {
+                 int initial_state,
+                 int n_states) {
   fsm->fns = fns;
   fsm->names = names;
-  fsm->state = 0; // by convention
+  fsm->state = initial_state;
   fsm->n_states = n_states;
 }
 
+int mu_fsm_get_state(mu_fsm_t *fsm) { return fsm->state; }
+
+void mu_fsm_set_state(mu_fsm_t *fsm, int state) { fsm->state = state; }
+
 void mu_fsm_dispatch(mu_fsm_t *fsm, void *receiver, void *sender) {
-  if (fsm->state < fsm->n_states) {
+  // TODO: should state be unsigned?  (enums can be negative...)
+  if ((fsm->state >= 0) && (fsm->state < fsm->n_states)) {
     mu_fsm_state_fn_t fn = fsm->fns[fsm->state];
     fn(receiver, sender);
   }
 }
 
-void mu_fsm_advance(mu_fsm_t *fsm, int state) { fsm->state = state; }
-
 const char *mu_fsm_state_name(mu_fsm_t *fsm, int state) {
   if (fsm->names) {
-    if (state < fsm->n_states) {
+    if ((state >= 0) && (state < fsm->n_states)) {
       // valid state
       return fsm->names[state];
     } else {

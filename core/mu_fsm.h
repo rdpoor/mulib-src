@@ -44,7 +44,7 @@ typedef struct {
   mu_fsm_state_fn_t *fns; // table of function pointers
   const char **names;     // may be NULL
   int state;              // the current state
-  size_t n_states;        // size of fns[]
+  int n_states;           // size of fns[]
 } mu_fsm_t;
 
 // =============================================================================
@@ -53,11 +53,14 @@ typedef struct {
 void mu_fsm_init(mu_fsm_t *fsm,
                  mu_fsm_state_fn_t fns[],
                  const char *names[],
-                 size_t n_states);
+                 int initial_state,
+                 int n_states);
+
+int mu_fsm_get_state(mu_fsm_t *fsm);
+
+void mu_fsm_set_state(mu_fsm_t *fsm, int state);
 
 void mu_fsm_dispatch(mu_fsm_t *fsm, void *receiver, void *sender);
-
-void mu_fsm_advance(mu_fsm_t *fsm, int state);
 
 const char *mu_fsm_state_name(mu_fsm_t *fsm, int state);
 
