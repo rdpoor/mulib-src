@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 R. Dunbar Poor <rdpoor@gmail.com>
+ * Copyright (c) 2020 R. D. Poor <rdpoor@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,46 +22,55 @@
  * SOFTWARE.
  */
 
-#ifndef _MULIB_H_
-#define _MULIB_H_
+// =============================================================================
+// Includes
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "mu_fsm.h"
 
 // =============================================================================
-// includes
-
-#include "mu_config.h" // must come first!
-#include "mu_time.h"
-
-#include "core/mu_bitvec.h"
-#include "core/mu_cirq.h"
-#include "core/mu_fsm.h"
-#include "core/mu_list.h"
-#include "core/mu_log.h"
-#include "core/mu_pstore.h"
-#include "core/mu_queue.h"
-#include "core/mu_sched.h"
-#include "core/mu_spscq.h"
-#include "core/mu_str.h"
-#include "core/mu_strbuf.h"
-#include "core/mu_task.h"
-#include "core/mu_thunk.h"
-#include "core/mu_timer.h"
-#include "core/mu_vect.h"
-#include "core/mu_version.h"
-
-#include "extras/mu_rfc_1123.h"
+// Private types and definitions
 
 // =============================================================================
-// types and definitions
+// Private declarations
 
 // =============================================================================
-// declarations
+// Local storage
 
-#ifdef __cplusplus
+// =============================================================================
+// Public code
+
+void mu_fsm_init(mu_fsm_t *fsm,
+                 mu_fsm_state_fn_t fns[],
+                 const char *names[],
+                 size_t n_states) {
+  fsm->fns = fns;
+  fsm->names = names;
+  fsm->state = 0; // by convention
+  fsm->n_states = n_states;
 }
-#endif
 
-#endif /* #ifndef _MULIB_H_ */
+void mu_fsm_dispatch(mu_fsm_t *fsm, void *receiver, void *sender) {
+  if (fsm->state < fsm->n_states) {
+    mu_fsm_state_fn_t fn = fsm->fns[fsm->state];
+    fn(receiver, sender);
+  }
+}
+
+void mu_fsm_advance(mu_fsm_t *fsm, int state) { fsm->state = state; }
+
+const char *mu_fsm_state_name(mu_fsm_t *fsm, int state) {
+  if (fsm->names) {
+    if (fsm->state < fsm->n_states) {
+      // valid state
+      return fsm->names[fsm->state];
+    } else {
+      // state is out of range.
+      return "unknown state";
+    }
+  }
+  // state names not provided
+  return "";
+}
+
+// =============================================================================
+// Private functions
