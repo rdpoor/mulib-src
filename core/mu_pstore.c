@@ -256,11 +256,11 @@ static void sift_down(mu_pstore_item_t *items, mu_pstore_compare_fn cmp, int sta
     // root has at least one child...
     int child = root * 2 + 1;      // left child
     if ((child + 1 <= end) &&
-        cmp(&items[child], &items[child + 1]) < 0) {
+        cmp(items[child], items[child + 1]) < 0) {
       // child has a sibling and its value is less than the sibling's...
       child += 1; // then act on right child instead
     }
-    if (cmp(&items[root], &items[child]) < 0) {
+    if (cmp(items[root], items[child]) < 0) {
       // not in heap order...
       swap(items, root, child);
       root = child; // continue sifting down the child

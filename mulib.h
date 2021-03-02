@@ -37,6 +37,7 @@ extern "C" {
 
 #include "core/mu_bitvec.h"
 #include "core/mu_cirq.h"
+#include "core/mu_dlist.h"
 #include "core/mu_fsm.h"
 #include "core/mu_list.h"
 #include "core/mu_log.h"

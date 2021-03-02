@@ -35,11 +35,9 @@
 // =============================================================================
 // local (forward) declarations
 
-static void *list_length_aux(mu_list_t *ref, void *arg);
+static void *list_find_aux(mu_list_t *element, void *arg);
 
-static void *list_find_aux(mu_list_t *ref, void *arg);
-
-static void *list_delete_aux(mu_list_t *ref, void *arg);
+static void *list_delete_aux(mu_list_t *element, void *arg);
 
 // =============================================================================
 // local storage
@@ -47,97 +45,99 @@ static void *list_delete_aux(mu_list_t *ref, void *arg);
 // =============================================================================
 // public code
 
-mu_list_t *mu_list_rest(mu_list_t *ref) {
-  if (!ref) {
-    return MU_LIST_END;
-  } else {
-    return ref->next;
+mu_list_t *mu_list_init(mu_list_t *list) {
+  list->next = NULL;
+  return list;
+}
+
+bool mu_list_is_empty(mu_list_t *list) {
+  return list->next == NULL;
+}
+
+size_t mu_list_length(mu_list_t *list) {
+  size_t length = 0;
+  while (list->next != NULL) {
+    length += 1;
+    list = list->next;
   }
+  return length;
 }
 
-mu_list_t *mu_list_set_rest(mu_list_t *ref, mu_list_t *rest) {
-  ref->next = rest;
-  return ref;
+bool mu_list_contains(mu_list_t *list, mu_list_t *element) {
+  return mu_list_find(list, element) != NULL;
 }
 
-bool mu_list_is_empty(mu_list_t *ref) {
-  return (ref == NULL) || (ref->next == NULL);
+mu_list_t *mu_list_first(mu_list_t *list) {
+  return list->next;
 }
 
-mu_list_t *mu_list_push(mu_list_t *ref, mu_list_t *item) {
-  // TODO check with godbolt: does returning a value increase code?
-  if (ref != NULL) {
-    item->next = ref->next;
-    ref->next = item;
+mu_list_t *mu_list_push(mu_list_t *list, mu_list_t *element) {
+  element->next = list->next;
+  list->next = element;
+  return list;
+}
+
+mu_list_t *mu_list_pop(mu_list_t *list) {
+  mu_list_t *element = NULL;
+
+  if (list->next != NULL) {
+    element = list->next;
+    list->next = element->next;
+    element->next = NULL;
   }
-  return ref;
+  return element;
 }
 
-mu_list_t *mu_list_pop(mu_list_t *ref) {
-  mu_list_t *item = NULL;
-  if (ref != NULL) {
-    item = ref->next;
-    if (item != NULL) {
-      ref->next = item->next;
-      item->next = NULL;
-    }
+mu_list_t *mu_list_find(mu_list_t *list, mu_list_t *element) {
+  return mu_list_traverse(list, list_find_aux, element);
+}
+
+mu_list_t *mu_list_delete(mu_list_t *list, mu_list_t *element) {
+  return mu_list_traverse(list, list_delete_aux, element);
+}
+
+mu_list_t *mu_list_reverse(mu_list_t *list) {
+  mu_list_t reversed;
+
+  mu_list_init(&reversed);
+  while (!mu_list_is_empty(list)) {
+    mu_list_push(&reversed, mu_list_pop(list));
   }
-  return item;
+  list->next = reversed.next;
+
+  return list;
 }
 
-void *mu_list_traverse(mu_list_t *ref, mu_list_traverse_fn fn, void *arg) {
+void *mu_list_traverse(mu_list_t *list, mu_list_traverse_fn fn, void *arg) {
+  mu_list_t *prev = list;
   void *result = NULL;
-  while (ref && result == NULL) {
-    result = fn(ref, arg);
-    ref = ref->next;
+
+  while (prev != NULL && result == NULL) {
+    result = fn(prev, arg);
+    prev = prev->next;
   }
   return result;
 }
 
-int mu_list_length(mu_list_t *ref) {
-  int count = 0;
-  mu_list_traverse(ref, list_length_aux, (void *)&count);
-  return count;
-}
-
-mu_list_t *mu_list_find(mu_list_t *ref, mu_list_t *item) {
-  return mu_list_traverse(ref, list_find_aux, item);
-}
-
-bool mu_list_contains(mu_list_t *ref, mu_list_t *item) {
-  return mu_list_find(ref, item) != MU_LIST_END;
-}
-
-mu_list_t *mu_list_delete(mu_list_t *ref, mu_list_t *item) {
-  return mu_list_traverse(ref, list_delete_aux, item);
-}
-
-mu_list_t *mu_list_reverse(mu_list_t *ref) {
-  if (ref != NULL) {
-    mu_list_t reversed = {.next = NULL};
-    while (ref->next) {
-      mu_list_push(&reversed, mu_list_pop(ref));
-    }
-    ref->next = reversed.next;
-  }
-  return ref;
+mu_list_t *mu_list_next_element(mu_list_t *element) {
+  return element->next;
 }
 
 // =============================================================================
 // local (static) code
 
-static void *list_length_aux(mu_list_t *ref, void *arg) {
-  int *count = (int *)arg;
-  if (ref->next != NULL) {
-    *count += 1;
+static void *list_find_aux(mu_list_t *prev, void *arg) {
+  if (prev->next == arg) {
+    return arg;
+  } else {
+    return NULL;
   }
-  return NULL;
 }
 
-static void *list_find_aux(mu_list_t *ref, void *arg) {
-  return (ref->next == arg) ? arg : NULL;
-}
-
-static void *list_delete_aux(mu_list_t *ref, void *arg) {
-  return (ref->next == arg) ? mu_list_pop(ref) : NULL;
+static void *list_delete_aux(mu_list_t *prev, void *arg) {
+  if (prev->next == arg) {
+    return mu_list_pop(prev);
+  } else {
+    return NULL;
+  }
 }
