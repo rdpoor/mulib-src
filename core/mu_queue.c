@@ -44,42 +44,40 @@
 // public code
 
 mu_queue_t *mu_queue_init(mu_queue_t *q) {
-  q->takr.next = NULL;
-  q->putr.next = NULL;
+  mu_list_init(&q->takr);
+  q->putr = NULL;
   return q;
-}
-
-mu_list_t *mu_queue_takr(mu_queue_t *q) {
-  return q->takr.next;
-}
-
-mu_list_t *mu_queue_putr(mu_queue_t *q) {
-  return q->putr.next;
 }
 
 mu_queue_t *mu_queue_add(mu_queue_t *q, mu_list_t *item) {
   item->next = NULL;
-  if (mu_list_is_empty(&q->takr)) {
-    // adding first element to the queue
-    q->takr.next = item;
+  if (q->putr == NULL) {
+    // adding first item
+    mu_list_push(&q->takr, item);
   } else {
-    // add item after putr
-    q->putr.next->next = item;
+    mu_list_push(q->putr, item);
   }
-  q->putr.next = item;
+  q->putr = item;
+
   return q;
 }
 
 mu_list_t *mu_queue_remove(mu_queue_t *q) {
   mu_list_t *item = mu_list_pop(&q->takr);
   if (mu_list_is_empty(&q->takr)) {
-    q->putr.next = NULL;       // removing last item;
+    q->putr = NULL;       // removing last item;
   }
   return item;
 }
 
 bool mu_queue_is_empty(mu_queue_t *q) {
   return mu_list_is_empty(&q->takr);
+}
+
+void mu_queue_empty(mu_queue_t *q) {
+  while (!mu_queue_is_empty(q)) {
+    mu_queue_remove(q);
+  }
 }
 
 bool mu_queue_contains(mu_queue_t *q, mu_list_t *item) {

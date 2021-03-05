@@ -55,7 +55,7 @@ extern "C" {
 
 typedef struct {
   mu_list_t takr;   // items are removed (popped) from the takr
-  mu_list_t putr;   // items are added (pushed) at the putr
+  mu_list_t *putr;  // items are added (pushed) at the putr
 } mu_queue_t;
 
 // =============================================================================
@@ -63,15 +63,13 @@ typedef struct {
 
 mu_queue_t *mu_queue_init(mu_queue_t *q);
 
-mu_list_t *mu_queue_takr(mu_queue_t *q);
-
-mu_list_t *mu_queue_putr(mu_queue_t *q);
-
 mu_queue_t *mu_queue_add(mu_queue_t *q, mu_list_t *item);
 
 mu_list_t *mu_queue_remove(mu_queue_t *q);
 
 bool mu_queue_is_empty(mu_queue_t *q);
+
+void mu_queue_empty(mu_queue_t *q);
 
 bool mu_queue_contains(mu_queue_t *q, mu_list_t *item);
 
