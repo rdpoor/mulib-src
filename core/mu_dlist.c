@@ -23,22 +23,51 @@
  */
 
 /**
-Implementation Notes:
+A newly initialize element has its next and prev fields set to itself.  We can
+use this to determine if an element is a member of a list:
 
-Each element of a dlist has a next and a prev field.
+            e
+          +---+
+     next | e |
+          +---+
+     prev | e |
+          +---+
 
-A dlist *always* implements a circular list:
-- A "list head" argument is a sentinal (in the CRL terminology)
-- An empty list is represented by the list head with next and prev pointers
-  pointing to itself.
-- If an element is part of a list, both next and prev fields are non-null
-- If an element is not part of a dlist, both next and prev fields are null.
+Most functions take a list head argument H that tracks the first and last
+elements of the underlying list:
 
-However, depending on your application, you can pass any element of a dlist
-as the head.
+An empty list:
+            H
+          +---+
+     next | H |
+          +---+
+     prev | H |
+          +---+
 
-*/
+One element
+            H           a
+          +---+       +---+
+          | a |       | H |
+          +---+       +---+
+          | a |       | H |
+          +---+       +---+
 
+Two elements:
+            H           b            a
+          +---+       +---+       +---+
+          | b |       | a |       | H |
+          +---+       +---+       +---+
+          | a |       | H |       | b |
+          +---+       +---+       +---+
+
+Three elements:
+            H           c            b           a
+          +---+       +---+       +---+       +---+
+          | c |       | b |       | a |       | H |
+          +---+       +---+       +---+       +---+
+          | a |       | H |       | c |       | b |
+          +---+       +---+       +---+       +---+
+ */
 
 // =============================================================================
 // includes
@@ -61,168 +90,156 @@ static void *list_find_aux(mu_dlist_t *element, void *arg);
 // =============================================================================
 // public code
 
-mu_dlist_t *mu_dlist_init(mu_dlist_t *list) {
-  list->next = list;
-  list->prev = list;
-  return list;
+// =============================================================================
+// operations on individual list elements
+
+mu_dlist_t *mu_dlist_init(mu_dlist_t *e) {
+  e->next = e->prev = e;
+  return e;
 }
 
-bool mu_dlist_is_empty(mu_dlist_t *list) {
-  return list->next == list;
+bool mu_dlist_is_empty(mu_dlist_t *e) {
+  return mu_dlist_next(e) == e;
 }
 
-size_t mu_dlist_length(mu_dlist_t *list) {
-  size_t length = 0;
-  mu_dlist_t *e = list;
-  while (e->next != list) {
+mu_dlist_t *mu_dlist_next(mu_dlist_t *element) {
+  return element->next;
+}
+
+mu_dlist_t *mu_dlist_prev(mu_dlist_t *element) {
+  return element->prev;
+}
+
+mu_dlist_t *mu_dlist_insert_next(mu_dlist_t *list, mu_dlist_t *e) {
+  e->prev = list;
+  e->next = list->next;
+  list->next->prev = e;
+  list->next = e;
+  return e;
+}
+
+mu_dlist_t *mu_dlist_insert_prev(mu_dlist_t *list, mu_dlist_t *e) {
+  e->next = list;
+  e->prev = list->prev;
+  list->prev->next = e;
+  list->prev = e;
+  return e;
+}
+
+bool mu_dlist_is_linked(mu_dlist_t *e) {
+  return !mu_dlist_is_empty(e);
+}
+
+mu_dlist_t *mu_dlist_unlink(mu_dlist_t *e) {
+  if (mu_dlist_is_linked(e)) {
+    e->prev->next = e->next;
+    e->next->prev = e->prev;
+    return mu_dlist_init(e);
+  } else {
+    return NULL;
+  }
+}
+
+// =============================================================================
+// operations on a list head
+
+mu_dlist_t *mu_dlist_first(mu_dlist_t *head) {
+  if (mu_dlist_is_empty(head)) {
+    return NULL;
+  } else {
+    return mu_dlist_next(head);
+  }
+}
+
+mu_dlist_t *mu_dlist_last(mu_dlist_t *head) {
+  if (mu_dlist_is_empty(head)) {
+    return NULL;
+  } else {
+    return mu_dlist_prev(head);
+  }
+}
+
+size_t mu_dlist_length(mu_dlist_t *head) {
+  mu_dlist_t *list = head;
+  int length = 0;
+
+  while (mu_dlist_next(list) != head) {
     length += 1;
-    e = e->next;
+    list = mu_dlist_next(list);
   }
   return length;
 }
 
-bool mu_dlist_contains(mu_dlist_t *list, mu_dlist_t *element) {
-  return mu_dlist_find(list, element) != NULL;
+mu_dlist_t *mu_dlist_find(mu_dlist_t *head, mu_dlist_t *e) {
+  return (mu_dlist_t *)mu_dlist_traverse(head, list_find_aux, e);
 }
 
-mu_dlist_t *mu_dlist_first(mu_dlist_t *list) {
-  mu_dlist_t *first = list->next;
-  if (first == list) {
+mu_dlist_t *mu_dlist_find_prev(mu_dlist_t *head, mu_dlist_t *e) {
+  return (mu_dlist_t *)mu_dlist_traverse_prev(head, list_find_aux, e);
+}
+
+mu_dlist_t *mu_dlist_push(mu_dlist_t *head, mu_dlist_t *e) {
+  mu_dlist_insert_next(head, e);
+  return head;
+}
+
+mu_dlist_t *mu_dlist_push_prev(mu_dlist_t *head, mu_dlist_t *e) {
+  mu_dlist_insert_prev(head, e);
+  return head;
+}
+
+mu_dlist_t *mu_dlist_pop(mu_dlist_t *head) {
+  if (mu_dlist_is_empty(head)) {
     return NULL;
   } else {
-    return first;
+    return mu_dlist_unlink(mu_dlist_next(head));
   }
 }
 
-mu_dlist_t *mu_dlist_last(mu_dlist_t *list) {
-  mu_dlist_t *last = list->prev;
-  if (last == list) {
+mu_dlist_t *mu_dlist_pop_prev(mu_dlist_t *head) {
+  if (mu_dlist_is_empty(head)) {
     return NULL;
   } else {
-    return last;
+    return mu_dlist_unlink(mu_dlist_prev(head));
   }
 }
 
-mu_dlist_t *mu_dlist_push(mu_dlist_t *list, mu_dlist_t *element) {
-  element->next = list->next;
-  list->next->prev = element;
-  list->next = element;
-  element->prev = list;
-  if (list->prev == list) {
-    list->prev = element;
-  }
-  return list;
-}
-
-mu_dlist_t *mu_dlist_lpush(mu_dlist_t *list, mu_dlist_t *element) {
-  element->prev = list->prev;
-  list->prev->next = element;
-  list->prev = element;
-  element->next = list;
-  if (list->next == list) {
-    list->next = element;
-  }
-  return list;
-}
-
-mu_dlist_t *mu_dlist_pop(mu_dlist_t *list) {
-  mu_dlist_t *element = NULL;
-
-  if (list->next != list) {
-    element = list->next;
-    element->next->prev = element->prev;
-    list->next = element->next;
-    element->next = NULL;
-    element->prev = NULL;
-    if (list->prev == element) {
-      list->prev = list;
-    }
-  }
-  return element;
-}
-
-mu_dlist_t *mu_dlist_lpop(mu_dlist_t *list) {
-  mu_dlist_t *element = NULL;
-
-  if (list->prev != list) {
-    element = list->prev;
-    element->prev->next = element->next;
-    list->prev = element->prev;
-    element->next = NULL;
-    element->prev = NULL;
-    if (list->next == element) {
-      list->next = list;
-    }
-  }
-  return element;
-}
-
-mu_dlist_t *mu_dlist_find(mu_dlist_t *list, mu_dlist_t *element) {
-  return mu_dlist_traverse(list, list_find_aux, element);
-}
-
-mu_dlist_t *mu_dlist_lfind(mu_dlist_t *list, mu_dlist_t *element) {
-  return mu_dlist_ltraverse(list, list_find_aux, element);
-}
-
-mu_dlist_t *mu_dlist_reverse(mu_dlist_t *list) {
-  mu_dlist_t reversed;
-
-  mu_dlist_init(&reversed);
-  while (!mu_dlist_is_empty(list)) {
-    mu_dlist_push(&reversed, mu_dlist_pop(list));
-  }
-  if (!mu_dlist_is_empty(&reversed)) {
-    list->next = reversed.next;
-    list->prev = reversed.prev;
-    list->next->prev = list;
-    list->prev->next = list;
-  }
-
-  return list;
-}
-
-void *mu_dlist_traverse(mu_dlist_t *list, mu_dlist_traverse_fn fn, void *arg) {
-  mu_dlist_t *element = list->next;
+void *mu_dlist_traverse(mu_dlist_t *head, mu_dlist_traverse_fn fn, void *arg) {
   void *result = NULL;
-
-  while (element != list && result == NULL) {
-    result = fn(element, arg);
-    element = element->next;
+  mu_dlist_t *list = mu_dlist_next(head);
+  while (list != head && result == NULL) {
+    result = fn(list, arg);
+    list = mu_dlist_next(list);
   }
   return result;
 }
 
-void *mu_dlist_ltraverse(mu_dlist_t *list, mu_dlist_traverse_fn fn, void *arg) {
-  mu_dlist_t *element = list->prev;
+void *mu_dlist_traverse_prev(mu_dlist_t *head, mu_dlist_traverse_fn fn, void *arg) {
   void *result = NULL;
-
-  while (element != list && result == NULL) {
-    result = fn(element, arg);
-    element = element->prev;
+  mu_dlist_t *list = mu_dlist_prev(head);
+  while (list != head && result == NULL) {
+    result = fn(list, arg);
+    list = mu_dlist_prev(list);
   }
   return result;
 }
 
-mu_dlist_t *mu_dlist_next_element(mu_dlist_t *element) {
-  return element->next;
-}
 
-mu_dlist_t *mu_dlist_prev_element(mu_dlist_t *element) {
-  return element->prev;
-}
+mu_dlist_t *mu_dlist_reverse(mu_dlist_t *head) {
+  if (mu_dlist_length(head) > 1) {
+    mu_dlist_t reversed;
+    mu_dlist_init(&reversed);
 
-bool mu_dlist_element_is_linked(mu_dlist_t *element) {
-  return element->next != NULL;
-}
+    do {
+      mu_dlist_push(&reversed, mu_dlist_pop(head));
+    } while (!mu_dlist_is_empty(head));
+    head->next = reversed.next;
+    head->prev = reversed.prev;
+    head->next->prev = head;
+    head->prev->next = head;
+  }
 
-mu_dlist_t *mu_dlist_unlink_element(mu_dlist_t *element) {
-  // Assumes element is in list!
-  element->next->prev = element->prev;
-  element->prev->next = element->next;
-  element->next = NULL;
-  element->prev = NULL;
-  return element;
+  return head;
 }
 
 // =============================================================================

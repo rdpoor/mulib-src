@@ -25,19 +25,18 @@
 // =============================================================================
 // includes
 
-#include "mulib.h"    // must come first
+#include "mulib.h" // must come first
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h> // memmove
-#include <assert.h>
 
 // =============================================================================
 // local types and definitions
 
 typedef struct {
-  mu_list_t task_list;     // time ordered list of tasks (soonest first)
-  mu_spscq_t isr_queue;    // interrupt-safe queue of tasks to be added
+  mu_dlist_t task_list;    // time ordered list of tasks (soonest first)
   mu_clock_fn clock_fn;    // function to call to get the current time
   mu_task_t *idle_task;    // the idle task
   mu_task_t *current_task; // the task currently being processed
@@ -48,9 +47,13 @@ typedef struct {
 
 static void default_idle_fn(void *self, void *arg);
 
+static mu_task_t *get_next_task(void);
+
+static mu_task_t *get_runnable_task(mu_time_t now);
+
 static mu_sched_err_t sched_task_at(mu_task_t *task, mu_time_t time);
 
-static void *sched_task_at_aux(mu_list_t *ref, void *arg);
+static mu_dlist_t *find_insertion_point(mu_dlist_t *head, mu_time_t time);
 
 // =============================================================================
 // local storage
@@ -63,57 +66,34 @@ static mu_task_t s_default_idle_task;
 // =============================================================================
 // public code
 
-void mu_sched_init(mu_spscq_item_t *isr_queue_store, uint16_t isr_queue_capacity) {
-  mu_spscq_init(&s_sched.isr_queue, isr_queue_store, isr_queue_capacity);
+void mu_sched_init() {
   s_sched.clock_fn = mu_time_now;
   s_sched.idle_task = &s_default_idle_task;
   mu_task_init(&s_default_idle_task, default_idle_fn, NULL, "Idle");
 
+  mu_dlist_init(&s_sched.task_list);
   mu_sched_reset();
 }
 
 void mu_sched_reset(void) {
-  mu_spscq_reset(&s_sched.isr_queue);
+  while (!mu_dlist_is_empty(&s_sched.task_list)) {
+    mu_dlist_pop(&s_sched.task_list);
+  }
   s_sched.current_task = NULL;
-  s_sched.task_list.next = NULL;
 }
 
 mu_sched_err_t mu_sched_step(void) {
-  mu_task_t *task;
   mu_time_t now = mu_sched_get_current_time();
 
-  // first, transfer any tasks in the isr queue into the main queue
-  while (mu_spscq_get(&s_sched.isr_queue, (void **)&task) !=
-         MU_CQUEUE_ERR_EMPTY) {
-    mu_sched_err_t err = mu_sched_task_at(task, now);
-    if (err != MU_SCHED_ERR_NONE) {
-      return err;
-    }
-  }
-
   // process one task in the main queue
-  task = mu_sched_get_next_task(); // peek at next task.
-  if (task != NULL) {
-    if (!mu_time_follows(mu_task_get_time(task), now)) {
-      // time to run the task: pop from queue, make current, run it...
-      s_sched.current_task =
-          MU_LIST_CONTAINER(mu_list_pop(&s_sched.task_list), mu_task_t, link);
-      // ASSERT(task == s_sched.current_task);
-      mu_task_call(s_sched.current_task, NULL);
-      // set current task to null to signify "not running task"
-      s_sched.current_task = NULL;
-      return MU_SCHED_ERR_NONE;
-    }
+  if ((s_sched.current_task = get_runnable_task(now)) != NULL) {
+    mu_task_call(s_sched.current_task, NULL);
+    s_sched.current_task = NULL;
+  } else {
+    mu_task_call(s_sched.idle_task, NULL);
   }
-
-  // arrive here if there was nothing to run
-  mu_task_call(s_sched.idle_task, NULL);
   return MU_SCHED_ERR_NONE;
 }
-
-mu_list_t mu_sched_task_list(void) { return s_sched.task_list; }
-
-mu_spscq_t *mu_sched_isr_queue(void) { return &s_sched.isr_queue; }
 
 mu_task_t *mu_sched_get_idle_task(void) { return s_sched.idle_task; }
 
@@ -129,25 +109,35 @@ void mu_sched_set_clock_source(mu_clock_fn clock_fn) {
 
 mu_time_t mu_sched_get_current_time(void) { return s_sched.clock_fn(); }
 
-int mu_sched_task_count(void) { return mu_list_length(&s_sched.task_list); }
+int mu_sched_task_count(void) {
+  // TODO: needs interrupt protection?
+  return mu_dlist_length(&s_sched.task_list);
+}
 
-bool mu_sched_is_empty(void) { return mu_list_is_empty(&s_sched.task_list); }
+bool mu_sched_is_empty(void) {
+  // TODO: needs interrupt protection?
+  return mu_dlist_is_empty(&s_sched.task_list);
+}
 
 mu_task_t *mu_sched_get_current_task(void) { return s_sched.current_task; }
 
 mu_task_t *mu_sched_get_next_task(void) {
-  if (s_sched.task_list.next == NULL) {
-    return NULL;
-  }
-  return MU_LIST_CONTAINER(s_sched.task_list.next, mu_task_t, link);
+  mu_task_t *task = NULL;
+
+  MU_WITH_INTERRUPTS_DISABLED(
+    task = get_next_task();
+  )
+
+  return task;
 }
 
 mu_task_t *mu_sched_remove_task(mu_task_t *task) {
-  mu_list_t *link = mu_list_delete(&s_sched.task_list, MU_LIST_REF(task, link));
-  if (link == NULL) {
-    return NULL;
-  }
-  return MU_LIST_CONTAINER(link, mu_task_t, link);
+  MU_WITH_INTERRUPTS_DISABLED(
+    if (mu_dlist_unlink(mu_task_link(task)) == NULL) {
+      task = NULL;
+    }
+  )
+  return task;
 }
 
 mu_sched_err_t mu_sched_task_now(mu_task_t *task) {
@@ -173,20 +163,17 @@ mu_sched_err_t mu_sched_reschedule_in(mu_time_dt in) {
 }
 
 mu_sched_err_t mu_sched_task_from_isr(mu_task_t *task) {
-  if (mu_spscq_put(&s_sched.isr_queue, task) == MU_CQUEUE_ERR_FULL) {
-    return MU_SCHED_ERR_FULL;
-  } else {
-    return MU_SCHED_ERR_NONE;
-  }
+  // TODO: no longer needed?
+  return sched_task_at(task, mu_sched_get_current_time());
 }
 
 mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task) {
+  // TODO: Needs interrupt protection?
   if (mu_sched_get_current_task() == task) {
     // task is the current task
     return MU_SCHED_TASK_STATUS_ACTIVE;
   }
-  if (!mu_list_contains(&s_sched.task_list, MU_LIST_REF(task, link))) {
-    // task is not in the schedule at all
+  if (!mu_task_is_scheduled(task)) {
     return MU_SCHED_TASK_STATUS_IDLE;
   }
 
@@ -196,7 +183,7 @@ mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task) {
     return MU_SCHED_TASK_STATUS_RUNNABLE;
 
   } else {
-    // task is scheduled for some pont in the future
+    // task is scheduled for some point in the future
     return MU_SCHED_TASK_STATUS_SCHEDULED;
   }
 }
@@ -210,33 +197,60 @@ static void default_idle_fn(void *self, void *arg) {
   // the default idle task doesn't do much...
 }
 
-static mu_sched_err_t sched_task_at(mu_task_t *task, mu_time_t time) {
-  if (!task) {
-    return MU_SCHED_ERR_NULL_TASK;  // make sure its what user intended.
+static mu_task_t *get_next_task(void) {
+  mu_dlist_t *link = mu_dlist_first(&s_sched.task_list);
+  if (link != NULL) {
+    return MU_DLIST_CONTAINER(link, mu_task_t, link);
+  } else {
+    return NULL;
   }
-  // TODO: decide if there are any cases where it's NOT necessary to check
-  // that task is already scheduled.  Until then, play it safe...
-  mu_sched_remove_task(task);
-  mu_task_set_time(task, time);
-  mu_list_traverse(&s_sched.task_list, sched_task_at_aux, (void *)task);
+}
+
+static mu_task_t *get_runnable_task(mu_time_t now) {
+  mu_task_t *task = NULL;
+
+  MU_WITH_INTERRUPTS_DISABLED(
+    task = get_next_task(); // peek at next task.
+    if ((task != NULL) && !mu_time_follows(mu_task_get_time(task), now)) {
+      // time to run the task: pop from queue
+      mu_dlist_pop(&s_sched.task_list);
+    } else {
+      task = NULL;
+    }
+  );
+  return task;
+}
+
+static mu_sched_err_t sched_task_at(mu_task_t *task, mu_time_t time) {
+  MU_WITH_INTERRUPTS_DISABLED(
+    mu_task_set_time(task, time);
+    mu_dlist_unlink(mu_task_link(task));
+    mu_dlist_t *list = find_insertion_point(&s_sched.task_list, time);
+    mu_dlist_insert_prev(list, mu_task_link(task));
+  );
   return MU_SCHED_ERR_NONE;
 }
 
-static void *sched_task_at_aux(mu_list_t *ref, void *arg) {
-  mu_task_t *task = (mu_task_t *)arg;
-  mu_time_t time1 = mu_task_get_time(task);
-
-  // If at end of list, insert task here.
-  if (ref->next == NULL) {
-    return mu_list_push(ref, MU_LIST_REF(task, link));
+/**
+ * @brief Return the list element that "is older" than the given time.
+ *
+ * The list head is considered older than all times, so the task can
+ * always be inserted before it.  And because a dlist is essentially
+ * circular, this function is guaranteed to always return a non-null
+ * list element.
+ */
+static mu_dlist_t *find_insertion_point(mu_dlist_t *head, mu_time_t time) {
+  if (mu_dlist_is_empty(head)) {
+    return head;
+  } else {
+    mu_dlist_t *list = mu_dlist_next(head);
+    while (list != head) {
+      mu_task_t *incumbent = MU_DLIST_CONTAINER(list, mu_task_t, link);
+      if (mu_time_precedes(time, mu_task_get_time(incumbent))) {
+        break;
+      }
+      list = mu_dlist_next(list);
+    }
+    return list;
   }
-  // Check relative times of new task and incumbent task.
-  mu_task_t *task2 = MU_LIST_CONTAINER(ref->next, mu_task_t, link);
-  mu_time_t time2 = mu_task_get_time(task2);
-  if (mu_time_precedes(time1, time2)) {
-    // task happens sooner than task2: insert on list
-    return mu_list_push(ref, MU_LIST_REF(task, link));
-  }
-  // keep searching ...
-  return NULL;
 }

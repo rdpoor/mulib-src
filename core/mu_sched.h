@@ -36,7 +36,6 @@ extern "C" {
 
 
 #include "mu_config.h"
-#include "mu_spscq.h"
 #include "mu_task.h"
 #include "mu_time.h"
 #include <stdbool.h>
@@ -68,14 +67,12 @@ typedef mu_time_t (*mu_clock_fn)(void);
 // declarations
 
 /**
- * \brief initialize the schedule module.  Not interrupt safe.
- *
- * TODO: Error return if isq_queue_capacity is not a power of 2.
+ * @brief initialize the schedule module.  Not interrupt safe.
  */
- void mu_sched_init(mu_spscq_item_t *isr_queue_store, uint16_t isr_queue_capacity);
+ void mu_sched_init(void);
 
 /**
- * \brief  Remove all scheduled items from the schedule.  Not interrupt safe.
+ * @brief  Remove all scheduled items from the schedule.  Not interrupt safe.
  */
 void mu_sched_reset(void);
 
@@ -84,20 +81,6 @@ void mu_sched_reset(void);
  * task.
  */
 mu_sched_err_t mu_sched_step(void);
-
-/**
- * @brief Return the list of tasks in the schedule.
- *
- * @deprecated This function exposes the internal implementation of the schduler
- * and is subject to change.  A better approach would be to provide an iterator
- * that traverses the elements of the schedule.
- */
-mu_list_t mu_sched_task_list(void);
-
-/**
- * @brief Return the single-producer, single-consumer interrupt quee.
- */
-mu_spscq_t *mu_sched_isr_queue(void);
 
 /**
  * @brief Return the default idle task (which does nothing but return).
@@ -122,7 +105,6 @@ mu_clock_fn mu_sched_get_clock_source(void);
 /**
  * @brief Set the clock source for the scheduler.
  *
- * @param sched The scheduler object.
  * @param clock_fn A function that returns the current time.
  */
 void mu_sched_set_clock_source(mu_clock_fn clock_fn);
@@ -155,7 +137,6 @@ mu_task_t *mu_sched_get_next_task(void);
 /**
  * @brief Remove a scheduled task.
  *
- * @param sched The scheduler object.
  * @param task The task to be removed.
  * @return The task that was removed, or NULL if it was not scheduled.
  */
@@ -242,7 +223,6 @@ mu_sched_err_t mu_sched_task_from_isr(mu_task_t *task);
  * * MU_SCHED_TASK_STATUS_RUNNABLE -- task is ready to run
  * * MU_SCHED_TASK_STATUS_ACTIVE -- task is currently running
  *
- * @param sched The scheduler object.
  * @param task The task being queried.
  * @return task status.
  */

@@ -32,7 +32,7 @@ extern "C" {
 // =============================================================================
 // includes
 
-#include "mu_list.h"
+#include "mu_dlist.h"
 #include "mu_thunk.h"
 #include "mu_time.h"
 
@@ -45,20 +45,20 @@ extern "C" {
  */
 
 typedef struct _mu_task {
-  mu_list_t link;   // next (older) event in the schedule
-  mu_time_t time;   // time at which this task fires
-  mu_thunk_t thunk; // function to be scheduled
+  mu_dlist_t link;         // link into the schedule
+  mu_time_t time;          // time at which this task fires
+  mu_thunk_t thunk;        // function to be scheduled
 #if (MU_TASK_PROFILING)
   const char *name;        // user defined task name
   unsigned int call_count; // # of times task is called
-  MU_FLOAT runtime;      // accumulated time spent running the task
-  MU_FLOAT max_duration; // max time spend running the task
+  MU_FLOAT runtime;        // accumulated time spent running the task
+  MU_FLOAT max_duration;   // max time spend running the task
 #endif
 } mu_task_t;
 
 mu_task_t *mu_task_init(mu_task_t *task, mu_thunk_fn fn, void *ctx, const char *name);
 
-mu_list_t mu_task_link(mu_task_t *task);
+mu_dlist_t *mu_task_link(mu_task_t *task);
 
 mu_time_t mu_task_get_time(mu_task_t *task);
 
@@ -71,6 +71,8 @@ void *mu_task_get_context(mu_task_t *task);
 const char *mu_task_name(mu_task_t *task);
 
 void mu_task_call(mu_task_t *task, void *arg);
+
+bool mu_task_is_scheduled(mu_task_t *task);
 
 #if (MU_TASK_PROFILING)
 

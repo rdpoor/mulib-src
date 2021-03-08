@@ -116,175 +116,186 @@ typedef void *(*mu_dlist_traverse_fn)(mu_dlist_t *list, void *arg);
 // =============================================================================
 // declarations
 
+// =============================================================================
+// operations on individual list elements
+
 /**
  * @brief Initialize a list head.
  *
- * @param list A pointer to the list head.
- * @return A pointer to the initialized list head.
+ * @param e A pointer to a list element.
+ * @return e
  */
-mu_dlist_t *mu_dlist_init(mu_dlist_t *list);
+mu_dlist_t *mu_dlist_init(mu_dlist_t *e);
 
 /**
  * @brief Return true if the list is the null list (is empty).
  *
- * @param ref A pointer to the list head.
- * @return True if ref or ref->next is NULL.
+ * @param e A pointer to a list element.
+ * @return true if the list contains no elements.
  */
-bool mu_dlist_is_empty(mu_dlist_t *list);
+bool mu_dlist_is_empty(mu_dlist_t *e);
+
+/**
+ * @brief Return a reference to the next element in the list.
+ *
+ * @param e A pointer to a list element.
+ * @return A pointer to the next list element.
+ */
+mu_dlist_t *mu_dlist_next(mu_dlist_t *e);
+
+/**
+ * @brief Return a reference to the previous element in the list.
+ *
+ * @param e A pointer to a list element.
+ * @return A pointer to the previous list element.
+ */
+mu_dlist_t *mu_dlist_prev(mu_dlist_t *e);
+
+/**
+ * @brief Insert an element after the given list.
+ *
+ * @param list A pointer to the list head
+ * @param e The element to insert
+ * @return e
+ */
+mu_dlist_t *mu_dlist_insert_next(mu_dlist_t *list, mu_dlist_t *e);
+
+/**
+ * @brief Insert an element before the given list.
+ *
+ * @param list A pointer to the list head
+ * @param e The element to insert
+ * @return e
+ */
+mu_dlist_t *mu_dlist_insert_prev(mu_dlist_t *list, mu_dlist_t *e);
+
+/**
+ * @brief Return true if an element is part of a linked list.
+ *
+ * @param e The element to test.
+ * @return true if the element is part of a list.
+ */
+bool mu_dlist_is_linked(mu_dlist_t *e);
+
+/**
+ * @brief Delete an element from a list.
+ *
+ * @param e A pointer the element to unlink.
+ * @return e if the element was in a list, NULL otherwise
+ */
+mu_dlist_t *mu_dlist_unlink(mu_dlist_t *e);
+
+
+// =============================================================================
+// operations on a list head
+
+/**
+ * @brief Return the first element of a list or NULL if the list is empty.
+ *
+ * @param head A pointer to the list head.
+ * @return the first element of the list or NULL if the list is empty.
+ */
+mu_dlist_t *mu_dlist_first(mu_dlist_t *head);
+
+
+/**
+ * @brief Return the last element of a list or NULL if the list is empty.
+ *
+ * @param head A pointer to the list head.
+ * @return the last element of the list or NULL if the list is empty.
+ */
+mu_dlist_t *mu_dlist_last(mu_dlist_t *head);
 
 /**
  * @brief Return the number of elements in a list.
  *
- * @param ref A pointer to the list head.
+ * @param head A pointer to the list head.
  * @return The number of elements in the list.
  */
-size_t mu_dlist_length(mu_dlist_t *list);
+size_t mu_dlist_length(mu_dlist_t *head);
 
 /**
- * @brief Return true if an item is a member of the list.
+ * @brief Find an element in a list.
  *
- * @param ref A pointer to the list head.
- * @param item The item to be checked for membership.
- * @return True if the item is a member of the list.
+ * @param head A pointer to the list head.
+ * @param e the element to search.
+ * @return e if the element is in the list, NULL otherwise.
  */
-bool mu_dlist_contains(mu_dlist_t *list, mu_dlist_t *element);
+mu_dlist_t *mu_dlist_find(mu_dlist_t *head, mu_dlist_t *e);
 
 /**
- * @brief Return a reference to the first element in the list, or NULL if the
- * list is empty.
+ * @brief Find an element in a list, searching right to left.
  *
- * @param list A pointer to the list head.
- * @return A reference to the first list element, or NULL on empty list.
+ * @param head A pointer to the list head.
+ * @param e the element to search.
+ * @return e if the element is in the list, NULL otherwise.
  */
-mu_dlist_t *mu_dlist_first(mu_dlist_t *list);
+mu_dlist_t *mu_dlist_find_prev(mu_dlist_t *head, mu_dlist_t *e);
 
 /**
- * @brief Return a reference to the last element in the list, or NULL if the
- * list is empty.
+ * @brief Push an element onto the head ot the list.
  *
- * @param list A pointer to the list head.
- * @return A reference to the last list element, or NULL on empty list.
- */
-mu_dlist_t *mu_dlist_last(mu_dlist_t *list);
-
-/**
- * @brief Push an item onto the head ot the list.
- *
- * @param list A pointer to the list head
- * @param element A pointer to a list item.
+ * @param head A pointer to the list head
+ * @param e A pointer to a element to push.
  * @return The list head.
  */
-mu_dlist_t *mu_dlist_push(mu_dlist_t *list, mu_dlist_t *element);
+mu_dlist_t *mu_dlist_push(mu_dlist_t *head, mu_dlist_t *e);
 
 /**
- * @brief Push an item onto the tail of the list.
+ * @brief Push an element onto the tail of the list.
  *
- * @param list A pointer to the list head
- * @param element A pointer to list item.
+ * @param head A pointer to the list head
+ * @param e A pointer to the element to push.
  * @return The list head.
  */
-mu_dlist_t *mu_dlist_lpush(mu_dlist_t *list, mu_dlist_t *element);
+mu_dlist_t *mu_dlist_push_prev(mu_dlist_t *head, mu_dlist_t *e);
 
 /**
  * @brief Remove the first element from a list.
  *
- * @param list A pointer to the list head.
+ * @param head A pointer to the list head.
  * @return The element removed from the list head, or NULL if the list is empty.
   */
-mu_dlist_t *mu_dlist_pop(mu_dlist_t *list);
+mu_dlist_t *mu_dlist_pop(mu_dlist_t *head);
 
 /**
  * @brief Remove the last element from a list.
  *
- * @param list A pointer to the list head.
+ * @param head A pointer to the list head.
  * @return The element removed from the list tail, or NULL if the list is empty.
  */
-mu_dlist_t *mu_dlist_lpop(mu_dlist_t *list);
-
-/**
- * @brief Find an item in a list, searching from the head.
- *
- * @param list A pointer to the list head.
- * @param element The item to be found.
- * @return A pointer to the found element or NULL if the element is not in the
- * list.
- */
-mu_dlist_t *mu_dlist_find(mu_dlist_t *list, mu_dlist_t *element);
-
-/**
- * @brief Find an item in a list, searching from the tail.
- *
- * @param list A pointer to the list head.
- * @param element The item to be found.
- * @return A pointer to the found element or NULL if the element is not in the
- * list.
- */
-mu_dlist_t *mu_dlist_lfind(mu_dlist_t *list, mu_dlist_t *element);
-
-/**
- * @brief In-place list reversal.
- *
- * @param list A pointer to the list head.
- * @return list, now pointing to the reversed list.
- */
-mu_dlist_t *mu_dlist_reverse(mu_dlist_t *list);
+mu_dlist_t *mu_dlist_pop_prev(mu_dlist_t *head);
 
 /**
  * @brief Call traverse_fn with each successive element of a list, stopping at
  * the end of the list or when the traverse_fn returns a non-NULL value.
  *
- * @param list A pointer to the list head.
+ * @param head A pointer to the list head.
  * @param fn The function to call on each element of the list.
  * @param arg A user-supplied argument, passed as the second argument to fn.
  * @return The final value returned from fn.
  */
-void *mu_dlist_traverse(mu_dlist_t *list, mu_dlist_traverse_fn fn, void *arg);
+void *mu_dlist_traverse(mu_dlist_t *head, mu_dlist_traverse_fn fn, void *arg);
 
 /**
  * @brief Call traverse_fn with each successive element of a list working from
  * the end of the list.  Stops at the head of the list or when traverse_fn
  * returns non-NULL value.
  *
- * @param list A pointer to the list head.
+ * @param head A pointer to the list head.
  * @param fn The function to call on each element of the list.
  * @param arg A user-supplied argument, passed as the second argument to fn.
  * @return The final value returned from fn.
  */
-void *mu_dlist_ltraverse(mu_dlist_t *list, mu_dlist_traverse_fn fn, void *arg);
+void *mu_dlist_traverse_prev(mu_dlist_t *head, mu_dlist_traverse_fn fn, void *arg);
 
 /**
- * @brief Return true if an element is part of a linked list.
+ * @brief In-place list reversal.
  *
- * @param element The element to test.
- * @return true if the element is part of a list.
+ * @param head A pointer to the list head.
+ * @return head, now pointing to the reversed list.
  */
-bool mu_dlist_element_is_linked(mu_dlist_t *element);
-
-/**
- * @brief Return the next element in a list.
- *
- * @param element The element
- * @return The next element in the list or NULL if at the end of the list.
- */
-mu_dlist_t *mu_dlist_next_element(mu_dlist_t *element);
-
-/**
- * @brief Return the prev element in a list.
- *
- * @param element The element
- * @return The next element in the list or NULL if at the end of the list.
- */
-mu_dlist_t *mu_dlist_prev_element(mu_dlist_t *element);
-
-/**
- * @brief Delete an element from a list.
- *
- * Note: Call this function only if the element is linked in a list.
- *
- * @param element A pointer the element to unlink.
- * @return element
- */
-mu_dlist_t *mu_dlist_unlink_element(mu_dlist_t *element);
+mu_dlist_t *mu_dlist_reverse(mu_dlist_t *head);
 
 #ifdef __cplusplus
 }

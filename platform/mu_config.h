@@ -41,7 +41,10 @@ extern "C" {
 // =============================================================================
 // types and definitions
 
- #define MU_LOG_ENABLED 1
+#define MU_DISABLE_INTERRUPTS() do {} while(0)
+#define MU_ENABLE_INTERRUPTS() do {} while(0)
+
+#define MU_LOG_ENABLED 1
 // #define MU_TASK_PROFILING
 // #define MU_CAN_SLEEP
 
@@ -59,6 +62,11 @@ typedef int32_t mu_time_ms_dt;
 
 // =============================================================================
 // Everything below this line is deduced from the settings above this line.
+
+#define MU_WITH_INTERRUPTS_DISABLED(_body)                                     \
+  MU_DISABLE_INTERRUPTS();                                                     \
+  _body                                                                        \
+  MU_ENABLE_INTERRUPTS();
 
 //#ifndef ASSERT
 //#define ASSERT(expr) do {} while(0)

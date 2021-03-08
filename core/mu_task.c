@@ -46,7 +46,7 @@ mu_task_t *mu_task_init(mu_task_t *task,
                         mu_thunk_fn fn,
                         void *ctx,
                         const char *name) {
-  task->link.next = NULL;
+  mu_dlist_init(&task->link);
   task->time = 0;
   mu_thunk_init(&task->thunk, fn, ctx);
 #if (MU_TASK_PROFILING)
@@ -58,8 +58,8 @@ mu_task_t *mu_task_init(mu_task_t *task,
   return task;
 }
 
-mu_list_t mu_task_link(mu_task_t *task) {
-  return task->link;
+mu_dlist_t *mu_task_link(mu_task_t *task) {
+  return &task->link;
 }
 
 mu_time_t mu_task_get_time(mu_task_t *task) {
@@ -102,6 +102,10 @@ void mu_task_call(mu_task_t *task, void *arg) {
   task->runtime += duration;
   if (duration > task->max_duration) task->max_duration = duration;
 #endif
+}
+
+bool mu_task_is_scheduled(mu_task_t *task) {
+  return mu_dlist_is_linked(&task->link);
 }
 
 #if (MU_TASK_PROFILING)
