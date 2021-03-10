@@ -37,6 +37,7 @@
 
 typedef struct {
   mu_dlist_t task_list;    // time ordered list of tasks (soonest first)
+  mu_dlist_t irq_tasks;    // unordered list of tasks queued from interrupt
   mu_clock_fn clock_fn;    // function to call to get the current time
   mu_task_t *idle_task;    // the idle task
   mu_task_t *current_task; // the task currently being processed
@@ -51,9 +52,26 @@ static mu_task_t *get_next_task(void);
 
 static mu_task_t *get_runnable_task(mu_time_t now);
 
-static mu_sched_err_t sched_task_at(mu_task_t *task, mu_time_t time);
+static mu_sched_err_t sched_task(mu_task_t *task);
 
 static mu_dlist_t *find_insertion_point(mu_dlist_t *head, mu_time_t time);
+
+/**
+ * Remove one task from the interrupt task list.
+ */
+static mu_task_t *pop_irq_task(void);
+
+/**
+ * @brief Add a task to the irq task list (from interrupt level)
+ */
+static void push_irq_task(mu_task_t *task);
+
+/**
+ * @brief Remove a task from the IRQ task list (from foreground level).
+ *
+ * Note: returns NULL if there are no tasks on the IRQ task list.
+ */
+static mu_task_t *pop_irq_task(void);
 
 // =============================================================================
 // local storage
@@ -84,6 +102,12 @@ void mu_sched_reset(void) {
 
 mu_sched_err_t mu_sched_step(void) {
   mu_time_t now = mu_sched_get_current_time();
+  mu_task_t *irq_task;
+
+  // Transfer any pending tasks from the interrupt queue to the main schedule
+  while ((irq_task = pop_irq_task()) != NULL) {
+    sched_task(irq_task);
+  }
 
   // process one task in the main queue
   if ((s_sched.current_task = get_runnable_task(now)) != NULL) {
@@ -122,34 +146,29 @@ bool mu_sched_is_empty(void) {
 mu_task_t *mu_sched_get_current_task(void) { return s_sched.current_task; }
 
 mu_task_t *mu_sched_get_next_task(void) {
-  mu_task_t *task = NULL;
-
-  MU_WITH_INTERRUPTS_DISABLED(
-    task = get_next_task();
-  )
-
-  return task;
+  return get_next_task();
 }
 
 mu_task_t *mu_sched_remove_task(mu_task_t *task) {
-  MU_WITH_INTERRUPTS_DISABLED(
-    if (mu_dlist_unlink(mu_task_link(task)) == NULL) {
-      task = NULL;
-    }
-  )
+  if (mu_dlist_unlink(mu_task_link(task)) == NULL) {
+    task = NULL;
+  }
   return task;
 }
 
 mu_sched_err_t mu_sched_task_now(mu_task_t *task) {
-  return sched_task_at(task, mu_sched_get_current_time());
+  mu_task_set_time(task, mu_sched_get_current_time());
+  return sched_task(task);
 }
 
 mu_sched_err_t mu_sched_task_at(mu_task_t *task, mu_time_t at) {
-  return sched_task_at(task, at);
+  mu_task_set_time(task, at);
+  return sched_task(task);
 }
 
 mu_sched_err_t mu_sched_task_in(mu_task_t *task, mu_time_dt in) {
-  return sched_task_at(task, mu_time_offset(mu_sched_get_current_time(), in));
+  mu_task_set_time(task, mu_time_offset(mu_sched_get_current_time(), in));
+  return sched_task(task);
 }
 
 mu_sched_err_t mu_sched_reschedule_now(void) {
@@ -159,12 +178,14 @@ mu_sched_err_t mu_sched_reschedule_now(void) {
 
 mu_sched_err_t mu_sched_reschedule_in(mu_time_dt in) {
   mu_task_t *task = mu_sched_get_current_task();
-  return sched_task_at(task, mu_time_offset(mu_task_get_time(task), in));
+  mu_task_set_time(task, mu_time_offset(mu_task_get_time(task), in));
+  return sched_task(task);
 }
 
 mu_sched_err_t mu_sched_task_from_isr(mu_task_t *task) {
-  // TODO: no longer needed?
-  return sched_task_at(task, mu_sched_get_current_time());
+  mu_task_set_time(task, mu_sched_get_current_time());
+  push_irq_task(task);
+  return MU_SCHED_ERR_NONE;
 }
 
 mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task) {
@@ -209,25 +230,21 @@ static mu_task_t *get_next_task(void) {
 static mu_task_t *get_runnable_task(mu_time_t now) {
   mu_task_t *task = NULL;
 
-  MU_WITH_INTERRUPTS_DISABLED(
-    task = get_next_task(); // peek at next task.
-    if ((task != NULL) && !mu_time_follows(mu_task_get_time(task), now)) {
-      // time to run the task: pop from queue
-      mu_dlist_pop(&s_sched.task_list);
-    } else {
-      task = NULL;
-    }
-  );
+  task = get_next_task(); // peek at next task.
+  if ((task != NULL) && !mu_time_follows(mu_task_get_time(task), now)) {
+    // time to run the task: pop from queue
+    mu_dlist_pop(&s_sched.task_list);
+  } else {
+    task = NULL;
+  }
   return task;
 }
 
-static mu_sched_err_t sched_task_at(mu_task_t *task, mu_time_t time) {
-  MU_WITH_INTERRUPTS_DISABLED(
-    mu_task_set_time(task, time);
-    mu_dlist_unlink(mu_task_link(task));
-    mu_dlist_t *list = find_insertion_point(&s_sched.task_list, time);
-    mu_dlist_insert_prev(list, mu_task_link(task));
-  );
+static mu_sched_err_t sched_task(mu_task_t *task) {
+  mu_time_t time = mu_task_get_time(task);
+  mu_dlist_unlink(mu_task_link(task));
+  mu_dlist_t *list = find_insertion_point(&s_sched.task_list, time);
+  mu_dlist_insert_prev(list, mu_task_link(task));
   return MU_SCHED_ERR_NONE;
 }
 
@@ -253,4 +270,18 @@ static mu_dlist_t *find_insertion_point(mu_dlist_t *head, mu_time_t time) {
     }
     return list;
   }
+}
+
+static void push_irq_task(mu_task_t *task) {
+  MU_WITH_INTERRUPTS_DISABLED(
+    mu_dlist_push(&s_sched.irq_tasks, mu_task_link(task));
+  );
+}
+
+static mu_task_t *pop_irq_task(void) {
+  mu_dlist_t *item;
+  MU_WITH_INTERRUPTS_DISABLED(
+    item = mu_dlist_pop(&s_sched.irq_tasks);
+  );
+  return (item != NULL) ? MU_DLIST_CONTAINER(item, mu_task_t, link) : NULL;
 }
