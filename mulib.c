@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 R. Dunbar Poor <rdpoor@gmail.com>
+ * Copyright (c) 2021 R. Dunbar Poor <rdpoor@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,11 @@
  * SOFTWARE.
  */
 
-#error Replace mu_time.c with your own implementation.
 
 // =============================================================================
 // includes
+
+#include "mulib.h"
 
 // =============================================================================
 // private types and definitions
@@ -34,10 +35,12 @@
 // private declarations
 
 // =============================================================================
-// local storage
+// user-visible code
+
+void mulib_init() {
+  mu_platform_init();
+  mu_sched_init();
+}
 
 // =============================================================================
-// public code
-
-// =============================================================================
-// local (static) code
+// private code
