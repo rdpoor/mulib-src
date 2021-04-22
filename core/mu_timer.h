@@ -42,7 +42,7 @@ extern "C";
 typedef struct {
   mu_task_t timer_task;
   mu_task_t *target_task;
-  mu_time_dt interval;
+  mu_duration_t interval;
 } mu_timer_t;
 
 // =============================================================================
@@ -52,7 +52,7 @@ mu_timer_t *mu_timer_one_shot(mu_timer_t *timer, mu_task_t *target_task);
 
 mu_timer_t *mu_timer_periodic(mu_timer_t *timer, mu_task_t *target_task);
 
-mu_timer_t *mu_timer_start(mu_timer_t *timer, mu_time_dt interval);
+mu_timer_t *mu_timer_start(mu_timer_t *timer, mu_duration_t interval);
 
 mu_timer_t *mu_timer_stop(mu_timer_t *timer);
 

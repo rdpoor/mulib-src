@@ -32,7 +32,7 @@ extern "C" {
 // =============================================================================
 // includes
 
-#include "mu_platform/mu_platform.h"
+#include "mu_platform.h"
 
 #include "core/mu_bitvec.h"
 #include "core/mu_cirq.h"

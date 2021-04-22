@@ -90,12 +90,16 @@ void mu_sched_init() {
   mu_task_init(&s_default_idle_task, default_idle_fn, NULL, "Idle");
 
   mu_dlist_init(&s_sched.task_list);
+  mu_dlist_init(&s_sched.irq_tasks);
   mu_sched_reset();
 }
 
 void mu_sched_reset(void) {
   while (!mu_dlist_is_empty(&s_sched.task_list)) {
     mu_dlist_pop(&s_sched.task_list);
+  }
+  while (!mu_dlist_is_empty(&s_sched.irq_tasks)) {
+    mu_dlist_pop(&s_sched.irq_tasks);
   }
   s_sched.current_task = NULL;
 }
@@ -166,7 +170,7 @@ mu_sched_err_t mu_sched_task_at(mu_task_t *task, mu_time_t at) {
   return sched_task(task);
 }
 
-mu_sched_err_t mu_sched_task_in(mu_task_t *task, mu_time_dt in) {
+mu_sched_err_t mu_sched_task_in(mu_task_t *task, mu_duration_t in) {
   mu_task_set_time(task, mu_time_offset(mu_sched_get_current_time(), in));
   return sched_task(task);
 }
@@ -176,7 +180,7 @@ mu_sched_err_t mu_sched_reschedule_now(void) {
   return mu_sched_task_now(task);
 }
 
-mu_sched_err_t mu_sched_reschedule_in(mu_time_dt in) {
+mu_sched_err_t mu_sched_reschedule_in(mu_duration_t in) {
   mu_task_t *task = mu_sched_get_current_task();
   mu_task_set_time(task, mu_time_offset(mu_task_get_time(task), in));
   return sched_task(task);

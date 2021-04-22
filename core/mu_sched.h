@@ -178,7 +178,7 @@ mu_sched_err_t mu_sched_task_at(mu_task_t *task, mu_time_t at);
  * @param in The interval after which to run the task.
  * @return MU_SCHED_ERR_NONE.  (Other error returns may be added in the future.)
  */
-mu_sched_err_t mu_sched_task_in(mu_task_t *task, mu_time_dt in);
+mu_sched_err_t mu_sched_task_in(mu_task_t *task, mu_duration_t in);
 
 /**
  * @brief Reschedule the current task to run as soon as possible.
@@ -201,7 +201,7 @@ mu_sched_err_t mu_sched_reschedule_now(void);
  * @return MU_SCHED_ERR_NOT_FOUND if there is no current task, MU_SCHED_ERR_NONE
  * otherwise.
  */
-mu_sched_err_t mu_sched_reschedule_in(mu_time_dt in);
+mu_sched_err_t mu_sched_reschedule_in(mu_duration_t in);
 
 /**
  * @brief Schedule a task from interrupt level.

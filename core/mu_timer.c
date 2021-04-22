@@ -61,7 +61,7 @@ mu_timer_t *mu_timer_periodic(mu_timer_t *timer, mu_task_t *target_task) {
   return timer;
 }
 
-mu_timer_t *mu_timer_start(mu_timer_t *timer, mu_time_dt interval) {
+mu_timer_t *mu_timer_start(mu_timer_t *timer, mu_duration_t interval) {
   timer->interval = interval;
   mu_sched_task_in(&timer->timer_task, interval);
   return timer;
