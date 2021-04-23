@@ -78,9 +78,9 @@ bool mu_task_is_scheduled(mu_task_t *task);
 
 unsigned int mu_task_call_count(mu_task_t *task);
 
-mu_time_ms_dt mu_task_runtime_ms(mu_task_t *task);
+mu_duration_t mu_task_runtime_ms(mu_task_t *task);
 
-mu_time_ms_dt mu_task_max_duration_ms(mu_task_t *task);
+mu_duration_t mu_task_max_duration_ms(mu_task_t *task);
 
 #ifdef MU_FLOAT
 MU_FLOAT mu_task_runtime_s(mu_task_t *task);

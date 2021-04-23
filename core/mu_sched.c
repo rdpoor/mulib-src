@@ -246,7 +246,10 @@ static mu_task_t *get_runnable_task(mu_time_t now) {
 
 static mu_sched_err_t sched_task(mu_task_t *task) {
   mu_time_t time = mu_task_get_time(task);
-  mu_dlist_unlink(mu_task_link(task));
+  if (mu_dlist_unlink(mu_task_link(task)) != NULL) {
+	  // here if a task was already scheduled - useful for debugging
+	  asm("nop");
+  }
   mu_dlist_t *list = find_insertion_point(&s_sched.task_list, time);
   mu_dlist_insert_prev(list, mu_task_link(task));
   return MU_SCHED_ERR_NONE;
