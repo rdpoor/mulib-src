@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h> // memmove
+#include <stdio.h>
 
 // =============================================================================
 // local types and definitions
@@ -72,6 +73,11 @@ static void push_irq_task(mu_task_t *task);
  * Note: returns NULL if there are no tasks on the IRQ task list.
  */
 static mu_task_t *pop_irq_task(void);
+
+/**
+ * TODO: should be conditional
+ */
+static void print_task(mu_task_t *task);
 
 // =============================================================================
 // local storage
@@ -213,6 +219,25 @@ mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task) {
   }
 }
 
+void mu_sched_print_state(void) {
+  mu_task_t *task;
+  mu_dlist_t *queue_head = &s_sched.task_list;
+  mu_dlist_t *queue_item;
+  mu_time_t now = mu_sched_get_current_time();
+
+  printf("Sched state at %lu:\n", now);
+  task = mu_sched_get_current_task();
+  if (task) {
+    print_task(task);
+  }
+  queue_item = mu_dlist_next(queue_head);
+  while (queue_item != queue_head) {
+    task = MU_DLIST_CONTAINER(queue_item, mu_task_t, link);
+    print_task(task);
+    queue_item = mu_dlist_next(queue_item);
+  }
+}
+
 // =============================================================================
 // local (static) code
 
@@ -252,6 +277,7 @@ static mu_sched_err_t sched_task(mu_task_t *task) {
   }
   mu_dlist_t *list = find_insertion_point(&s_sched.task_list, time);
   mu_dlist_insert_prev(list, mu_task_link(task));
+  // mu_sched_print_state();  // ###
   return MU_SCHED_ERR_NONE;
 }
 
@@ -291,4 +317,27 @@ static mu_task_t *pop_irq_task(void) {
     item = mu_dlist_pop(&s_sched.irq_tasks);
   );
   return (item != NULL) ? MU_DLIST_CONTAINER(item, mu_task_t, link) : NULL;
+}
+
+// TODO: should be conditional
+static void print_task(mu_task_t *task) {
+  if (!task) return;
+  char status;
+  switch(mu_sched_get_task_status(task)) {
+    case MU_SCHED_TASK_STATUS_ACTIVE:
+    	status = 'A';
+    	break;
+    case MU_SCHED_TASK_STATUS_IDLE:
+    	status = 'I';
+    	break;
+    case MU_SCHED_TASK_STATUS_RUNNABLE:
+    	status = 'R';
+    	break;
+    case MU_SCHED_TASK_STATUS_SCHEDULED:
+    	status = 'S';
+		break;
+    default:
+    	status = '?';
+  }
+  printf("  %c %08lu %s\n", status, mu_task_get_time(task), mu_task_name(task));
 }

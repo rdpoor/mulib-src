@@ -46,7 +46,11 @@ mu_task_t *mu_task_init(mu_task_t *task,
                         mu_thunk_fn fn,
                         void *ctx,
                         const char *name) {
-  mu_dlist_init(&task->link);
+  // Interesting bug: do NOT initialize the link field, since the task may still
+  // be in the schedule queue.  Initializing it here wil lose information that
+  // the scheduler needs.  It if is in the queue, the sheduler will unlink it,
+  // which will then initialize the link.
+  // mu_dlist_init(&task->link);
   task->time = 0;
   mu_thunk_init(&task->thunk, fn, ctx);
 #if (MU_TASK_PROFILING)
