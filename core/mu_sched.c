@@ -199,7 +199,6 @@ mu_sched_err_t mu_sched_task_from_isr(mu_task_t *task) {
 }
 
 mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task) {
-  // TODO: Needs interrupt protection?
   if (mu_sched_get_current_task() == task) {
     // task is the current task
     return MU_SCHED_TASK_STATUS_ACTIVE;
@@ -236,6 +235,11 @@ void mu_sched_print_state(void) {
     print_task(task);
     queue_item = mu_dlist_next(queue_item);
   }
+}
+
+mu_task_t *mu_sched_traverse(mu_sched_traverse_fn user_fn, void *arg) {
+  // TODO: Implement me.
+  return NULL;
 }
 
 // =============================================================================

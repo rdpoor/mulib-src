@@ -63,6 +63,15 @@ typedef enum {
 // Signature for clock source function.  Returns the current time.
 typedef mu_time_t (*mu_clock_fn)(void);
 
+/**
+ * @brief Signature for a function passed to mu_sched_traverse.
+ *
+ * @param task a pointer to a task..
+ * @param arg A user-supplied argument.
+ * @return A NULL value to continue traversing, a non-null value to stop.
+ */
+typedef task_t *(*mu_sched_traverse_fn)(mu_task_t *task, void *arg);
+
 // =============================================================================
 // declarations
 
@@ -234,6 +243,23 @@ mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task);
  * TODO: This should be under a configuration conditional.
  */
 void mu_sched_print_state(void);
+
+/**
+ * @brief Call a user-supplied function for each task in the schedule.
+ *
+ * The user-supplied function has the signature:
+ *
+ *    mu_task_t *user_fn(mu_task_t *task, void *arg)
+ *
+ * Traversing the list continues until the end of the list is reached, or the
+ * user function returns a non-null value.
+ *
+ * @param user_fn The function to call with each element of the schedule.
+ * @param arg The value supplies as the second argument to the user fun.
+ * @return A non-null value returned by the user function, or NULL if the end of
+ *         the list is reached.
+ */
+void mu_sched_traverse(mu_sched_traverse_fn user_fn, void *arg);
 
 #ifdef __cplusplus
 }
