@@ -238,13 +238,6 @@ mu_sched_err_t mu_sched_task_from_isr(mu_task_t *task);
 mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task);
 
 /**
- * @brief Print the current schedule
- *
- * TODO: This should be under a configuration conditional.
- */
-void mu_sched_print_state(void);
-
-/**
  * @brief Call a user-supplied function for each task in the schedule.
  *
  * The user-supplied function has the signature:

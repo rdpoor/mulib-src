@@ -218,25 +218,6 @@ mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task) {
   }
 }
 
-void mu_sched_print_state(void) {
-  mu_task_t *task;
-  mu_dlist_t *queue_head = &s_sched.task_list;
-  mu_dlist_t *queue_item;
-  mu_time_t now = mu_sched_get_current_time();
-
-  printf("Sched state at %lu:\n", now);
-  task = mu_sched_get_current_task();
-  if (task) {
-    print_task(task);
-  }
-  queue_item = mu_dlist_next(queue_head);
-  while (queue_item != queue_head) {
-    task = MU_DLIST_CONTAINER(queue_item, mu_task_t, link);
-    print_task(task);
-    queue_item = mu_dlist_next(queue_item);
-  }
-}
-
 mu_task_t *mu_sched_traverse(mu_sched_traverse_fn user_fn, void *arg) {
   // TODO: Implement me.
   return NULL;
