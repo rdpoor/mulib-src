@@ -35,7 +35,6 @@ extern "C" {
 //#include "mulib.h"
 
 
-#include "mu_config.h"
 #include "mu_task.h"
 #include "mu_time.h"
 #include <stdbool.h>
@@ -70,7 +69,7 @@ typedef mu_time_t (*mu_clock_fn)(void);
  * @param arg A user-supplied argument.
  * @return A NULL value to continue traversing, a non-null value to stop.
  */
-typedef task_t *(*mu_sched_traverse_fn)(mu_task_t *task, void *arg);
+typedef mu_task_t *(*mu_sched_traverse_fn)(mu_task_t *task, void *arg);
 
 // =============================================================================
 // declarations
@@ -252,7 +251,7 @@ mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task);
  * @return A non-null value returned by the user function, or NULL if the end of
  *         the list is reached.
  */
-void mu_sched_traverse(mu_sched_traverse_fn user_fn, void *arg);
+mu_task_t *mu_sched_traverse(mu_sched_traverse_fn user_fn, void *arg);
 
 #ifdef __cplusplus
 }

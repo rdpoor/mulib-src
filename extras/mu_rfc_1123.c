@@ -28,6 +28,7 @@
 #include "mu_rfc_1123.h"
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
@@ -43,11 +44,15 @@
 // tokens is a denseely packed string of tokens, where each token is token_len
 // characters long.  If s equals the Nth token, set dst to N (by reference)
 // and return s incremented by token_len.  else return NULL
-static const char *parse_tokens(const char *s, int *dst, const char *tokens, int token_len);
+static const char *parse_tokens(const char *s, int8_t *dst, const char *tokens, int token_len);
 
 // parse N digits as a base-10 number and return it by reference in dst, then
 // return s incremented by n_digits.  Return NULL if s does not contain digits.
-static const char *parse_int(const char *s, int *dst, int n_digits);
+static const char *parse_int8(const char *s, int8_t *dst, int n_digits);
+
+// parse N digits as a base-10 number and return it by reference in dst, then
+// return s incremented by n_digits.  Return NULL if s does not contain digits.
+static const char *parse_int16(const char *s, int16_t *dst, int n_digits);
 
 // Skip over the given literal, return s incremented by strlen(literal), else
 // return NULL if s does not match literal.
@@ -66,19 +71,19 @@ const char *mu_rfc_1123_str_to_tm(const char *s, struct tm *tm) {
   memset(tm, 0, sizeof(struct tm));
   if (!(s = parse_tokens(s, &tm->tm_wday, s_days, 3))) return NULL;
   if (!(s = skip_literal(s, ", "))) return NULL;
-  if (!(s = parse_int(s, &tm->tm_mday, 2))) return NULL;
+  if (!(s = parse_int8(s, &tm->tm_mday, 2))) return NULL;
   if (!(s = skip_literal(s, " "))) return NULL;
   if (!(s = parse_tokens(s, &tm->tm_mon, s_months, 3))) return NULL;
   if (!(s = skip_literal(s, " "))) return NULL;
-  if (!(s = parse_int(s, &tm->tm_year, 4))) return NULL;
+  if (!(s = parse_int16(s, &tm->tm_year, 4))) return NULL;
   // want year - 1900
   tm->tm_year -= TM_YEAR_OFFSET;
   if (!(s = skip_literal(s, " "))) return NULL;
-  if (!(s = parse_int(s, &tm->tm_hour, 2))) return NULL;
+  if (!(s = parse_int8(s, &tm->tm_hour, 2))) return NULL;
   if (!(s = skip_literal(s, ":"))) return NULL;
-  if (!(s = parse_int(s, &tm->tm_min, 2))) return NULL;
+  if (!(s = parse_int8(s, &tm->tm_min, 2))) return NULL;
   if (!(s = skip_literal(s, ":"))) return NULL;
-  if (!(s = parse_int(s, &tm->tm_sec, 2))) return NULL;
+  if (!(s = parse_int8(s, &tm->tm_sec, 2))) return NULL;
   if (!(s = skip_literal(s, " GMT"))) return NULL;
   return s;
 }
@@ -100,7 +105,7 @@ char *mu_rfc_1123_tm_to_str(const struct tm *tm, char *s, int maxlen) {
 // =============================================================================
 // Local (static) code
 
-static const char *parse_tokens(const char *s, int *dst, const char *tokens, int token_len) {
+static const char *parse_tokens(const char *s, int8_t *dst, const char *tokens, int token_len) {
   size_t tokens_length = strlen(tokens);
   for (size_t i = 0; i < tokens_length; i += token_len) {
     if (strncmp(s, &tokens[i], token_len) == 0) {
@@ -112,18 +117,32 @@ static const char *parse_tokens(const char *s, int *dst, const char *tokens, int
   return NULL;
 }
 
-static const char *parse_int(const char *s, int *dst, int n_digits) {
-  *dst = 0;
+static const char *parse_int8(const char *s, int8_t *dst, int n_digits) {
+	*dst = 0;
 
-  for (int i = 0; i < n_digits; i++) {
-    char ch = s[i];
-    if ((ch >= '0') && (ch <= '9')) {
-      *dst = (*dst * 10) + (ch - '0');
-    } else {
-      return NULL;
-    }
-  }
-  return s + n_digits;
+	for (int i = 0; i < n_digits; i++) {
+		char ch = s[i];
+		if ((ch >= '0') && (ch <= '9')) {
+			*dst = (*dst * 10) + (ch - '0');
+			} else {
+			return NULL;
+		}
+	}
+	return s + n_digits;
+}
+
+static const char *parse_int16(const char *s, int16_t *dst, int n_digits) {
+	*dst = 0;
+
+	for (int i = 0; i < n_digits; i++) {
+		char ch = s[i];
+		if ((ch >= '0') && (ch <= '9')) {
+			*dst = (*dst * 10) + (ch - '0');
+			} else {
+			return NULL;
+		}
+	}
+	return s + n_digits;
 }
 
 static const char *skip_literal(const char *s, const char *literal) {
