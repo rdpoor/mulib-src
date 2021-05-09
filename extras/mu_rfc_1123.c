@@ -38,21 +38,59 @@
 
 #define TM_YEAR_OFFSET 1900
 
+// Most ports define a tm struct using all ints:
+// struct tm {
+//     int tm_sec;    /* Seconds (0-60) */
+//     int tm_min;    /* Minutes (0-59) */
+//     int tm_hour;   /* Hours (0-23) */
+//     int tm_mday;   /* Day of the month (1-31) */
+//     int tm_mon;    /* Month (0-11) */
+//     int tm_year;   /* Year - 1900 */
+//     int tm_wday;   /* Day of the week (0-6, Sunday = 0) */
+//     int tm_yday;   /* Day in the year (0-365, 1 Jan = 0) */
+//     int tm_isdst;  /* Daylight saving time */
+// };
+//
+// However, the AVR128U1U (and likely others) define the tm struct using
+// 8- and 16- bit fields:
+//
+// struct tm {
+//     int8_t          tm_sec; /**< seconds after the minute - [ 0 to 59 ] */
+//     int8_t          tm_min; /**< minutes after the hour - [ 0 to 59 ] */
+//     int8_t          tm_hour; /**< hours since midnight - [ 0 to 23 ] */
+//     int8_t          tm_mday; /**< day of the month - [ 1 to 31 ] */
+//     int8_t          tm_wday; /**< days since Sunday - [ 0 to 6 ] */
+//     int8_t          tm_mon; /**< months since January - [ 0 to 11 ] */
+//     int16_t         tm_year; /**< years since 1900 */
+//     int16_t         tm_yday; /**< days since January 1 - [ 0 to 365 ] */
+//     int16_t         tm_isdst; /**< Daylight Saving Time flag */
+// };
+//
+// These defines make it possible to assign values directly into the struct:
+//
+#ifndef __AVR_ATxmega128A1U__
+#define TM_FIELD_SMALL int
+#define TM_FIELD_LARGE int
+#else
+#define TM_FIELD_SMALL int8_t
+#define TM_FIELD_LARGE int16_t
+#endif
+
 // =============================================================================
 // Local (forward) declarations
 
 // tokens is a denseely packed string of tokens, where each token is token_len
 // characters long.  If s equals the Nth token, set dst to N (by reference)
 // and return s incremented by token_len.  else return NULL
-static const char *parse_tokens(const char *s, int8_t *dst, const char *tokens, int token_len);
+static const char *parse_tokens(const char *s, TM_FIELD_SMALL *dst, const char *tokens, int token_len);
 
 // parse N digits as a base-10 number and return it by reference in dst, then
 // return s incremented by n_digits.  Return NULL if s does not contain digits.
-static const char *parse_int8(const char *s, int8_t *dst, int n_digits);
+static const char *parse_int_small(const char *s, TM_FIELD_SMALL *dst, int n_digits);
 
 // parse N digits as a base-10 number and return it by reference in dst, then
 // return s incremented by n_digits.  Return NULL if s does not contain digits.
-static const char *parse_int16(const char *s, int16_t *dst, int n_digits);
+static const char *parse_int_large(const char *s, TM_FIELD_LARGE *dst, int n_digits);
 
 // Skip over the given literal, return s incremented by strlen(literal), else
 // return NULL if s does not match literal.
@@ -71,19 +109,19 @@ const char *mu_rfc_1123_str_to_tm(const char *s, struct tm *tm) {
   memset(tm, 0, sizeof(struct tm));
   if (!(s = parse_tokens(s, &tm->tm_wday, s_days, 3))) return NULL;
   if (!(s = skip_literal(s, ", "))) return NULL;
-  if (!(s = parse_int8(s, &tm->tm_mday, 2))) return NULL;
+  if (!(s = parse_int_small(s, &tm->tm_mday, 2))) return NULL;
   if (!(s = skip_literal(s, " "))) return NULL;
   if (!(s = parse_tokens(s, &tm->tm_mon, s_months, 3))) return NULL;
   if (!(s = skip_literal(s, " "))) return NULL;
-  if (!(s = parse_int16(s, &tm->tm_year, 4))) return NULL;
+  if (!(s = parse_int_large(s, &tm->tm_year, 4))) return NULL;
   // want year - 1900
   tm->tm_year -= TM_YEAR_OFFSET;
   if (!(s = skip_literal(s, " "))) return NULL;
-  if (!(s = parse_int8(s, &tm->tm_hour, 2))) return NULL;
+  if (!(s = parse_int_small(s, &tm->tm_hour, 2))) return NULL;
   if (!(s = skip_literal(s, ":"))) return NULL;
-  if (!(s = parse_int8(s, &tm->tm_min, 2))) return NULL;
+  if (!(s = parse_int_small(s, &tm->tm_min, 2))) return NULL;
   if (!(s = skip_literal(s, ":"))) return NULL;
-  if (!(s = parse_int8(s, &tm->tm_sec, 2))) return NULL;
+  if (!(s = parse_int_small(s, &tm->tm_sec, 2))) return NULL;
   if (!(s = skip_literal(s, " GMT"))) return NULL;
   return s;
 }
@@ -105,7 +143,7 @@ char *mu_rfc_1123_tm_to_str(const struct tm *tm, char *s, int maxlen) {
 // =============================================================================
 // Local (static) code
 
-static const char *parse_tokens(const char *s, int8_t *dst, const char *tokens, int token_len) {
+static const char *parse_tokens(const char *s, TM_FIELD_SMALL *dst, const char *tokens, int token_len) {
   size_t tokens_length = strlen(tokens);
   for (size_t i = 0; i < tokens_length; i += token_len) {
     if (strncmp(s, &tokens[i], token_len) == 0) {
@@ -117,7 +155,7 @@ static const char *parse_tokens(const char *s, int8_t *dst, const char *tokens, 
   return NULL;
 }
 
-static const char *parse_int8(const char *s, int8_t *dst, int n_digits) {
+static const char *parse_int_small(const char *s, TM_FIELD_SMALL *dst, int n_digits) {
 	*dst = 0;
 
 	for (int i = 0; i < n_digits; i++) {
@@ -131,7 +169,7 @@ static const char *parse_int8(const char *s, int8_t *dst, int n_digits) {
 	return s + n_digits;
 }
 
-static const char *parse_int16(const char *s, int16_t *dst, int n_digits) {
+static const char *parse_int_large(const char *s, TM_FIELD_LARGE *dst, int n_digits) {
 	*dst = 0;
 
 	for (int i = 0; i < n_digits; i++) {
