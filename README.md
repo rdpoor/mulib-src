@@ -13,4 +13,4 @@ mulib features:
 
 # for more information
 
-This mulib respository is kept to a bare minimum to make it easy to integrate into your softare project.  For more information, unit tests and examples, see https://github.com/rdpoor/mulib-examples
+This mulib respository is kept to a bare minimum to make it easy to integrate into your softare project.  For more information, unit tests and examples, see https://github.com/rdpoor/mulib-support
