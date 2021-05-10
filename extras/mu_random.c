@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 R. Dunbar Poor <rdpoor@gmail.com>
+ * Copyright (c) 2021 Klatu Networks, Inc
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,55 +22,41 @@
  * SOFTWARE.
  */
 
-#ifndef _MULIB_H_
-#define _MULIB_H_
+// =============================================================================
+// Includes
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "mu_random.h"
+#include <stdint.h>
 
 // =============================================================================
-// includes
+// Local types and definitions
 
-#include "mu_config.h"
-
-#include "core/mu_bitvec.h"
-#include "core/mu_cirq.h"
-#include "core/mu_dlist.h"
-#include "core/mu_fsm.h"
-#include "core/mu_list.h"
-#include "core/mu_log.h"
-#include "core/mu_pstore.h"
-#include "core/mu_queue.h"
-#include "core/mu_sched.h"
-#include "core/mu_spscq.h"
-#include "core/mu_str.h"
-#include "core/mu_strbuf.h"
-#include "core/mu_task.h"
-#include "core/mu_thunk.h"
-#include "core/mu_timer.h"
-#include "core/mu_vect.h"
-#include "core/mu_version.h"
-
-#include "extras/mu_rfc_1123.h"
-#include "extras/mu_random.h"
+#define RAND_A ((uint32_t)1103515245)
+#define RAND_C ((uint32_t)12345)
 
 // =============================================================================
-// types and definitions
+// Local (forward) declarations
 
 // =============================================================================
-// declarations
+// Local storage
 
-/**
- * @brief Initialize the mulib system.
- *
- * This function should be called once at startup before calling any mulib
- * functions.
- */
-void mulib_init(void);
+static uint32_t s_random_seed = ((uint32_t)123456789);
 
-#ifdef __cplusplus
+// =============================================================================
+// Public code
+
+uint32_t mu_random(void) {
+  s_random_seed = (uint32_t)((RAND_A * s_random_seed + RAND_C) & 0x7fffffff);
+  return s_random_seed;
 }
-#endif
 
-#endif /* #ifndef _MULIB_H_ */
+uint32_t mu_random_range(uint32_t min, uint32_t max) {
+  return min + (mu_random() % (max - min));
+}
+
+void mu_random_seed(uint32_t seed) {
+  s_random_seed = seed;
+}
+
+// =============================================================================
+// Local (static) code

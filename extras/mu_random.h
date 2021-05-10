@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 R. Dunbar Poor <rdpoor@gmail.com>
+ * Copyright (c) 2021 Klatu Networks, Inc
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,55 +22,49 @@
  * SOFTWARE.
  */
 
-#ifndef _MULIB_H_
-#define _MULIB_H_
+#ifndef _MU_RANDOM_H_
+#define _MU_RANDOM_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // =============================================================================
-// includes
+// Includes
 
-#include "mu_config.h"
-
-#include "core/mu_bitvec.h"
-#include "core/mu_cirq.h"
-#include "core/mu_dlist.h"
-#include "core/mu_fsm.h"
-#include "core/mu_list.h"
-#include "core/mu_log.h"
-#include "core/mu_pstore.h"
-#include "core/mu_queue.h"
-#include "core/mu_sched.h"
-#include "core/mu_spscq.h"
-#include "core/mu_str.h"
-#include "core/mu_strbuf.h"
-#include "core/mu_task.h"
-#include "core/mu_thunk.h"
-#include "core/mu_timer.h"
-#include "core/mu_vect.h"
-#include "core/mu_version.h"
-
-#include "extras/mu_rfc_1123.h"
-#include "extras/mu_random.h"
+#include <stdint.h>
 
 // =============================================================================
-// types and definitions
+// Types and definitions
 
 // =============================================================================
-// declarations
+// Declarations
 
 /**
- * @brief Initialize the mulib system.
+ * @brief Return a pseudo-random integer between 0 and 2^31 - 1
  *
- * This function should be called once at startup before calling any mulib
- * functions.
+ * @return A pseudo random integer.
  */
-void mulib_init(void);
+uint32_t mu_random(void);
+
+/**
+ * @brief Return a random integer between min (inclusive) and max (exclusive).
+ *
+ * @param min The minimum (inclusive) value to return.
+ * @param max The maximum (exclusive) value to return.
+ * @return A pseudo random integer between min (inclusive) and max (exclusive).
+ */
+uint32_t mu_random_range(uint32_t min, uint32_t max);
+
+/**
+ * @brief Set the pseudo random number generator seed.
+ *
+ * @param seed A 32-bit integer to use as the seed.
+ */
+void mu_random_seed(uint32_t seed);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* #ifndef _MULIB_H_ */
+#endif /* #ifndef _MU_RANDOM_H_ */

@@ -189,6 +189,7 @@ mu_sched_err_t mu_sched_reschedule_in(mu_duration_t in) {
 
 mu_sched_err_t mu_sched_task_from_isr(mu_task_t *task) {
   mu_task_set_time(task, mu_sched_get_current_time());
+  // BUGFIX: If the task was in the schedule, this will break the queue list.
   push_irq_task(task);
   return MU_SCHED_ERR_NONE;
 }
