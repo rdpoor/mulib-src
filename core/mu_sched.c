@@ -38,10 +38,11 @@
 
 typedef struct {
   mu_dlist_t task_list;    // time ordered list of tasks (soonest first)
-  mu_dlist_t irq_tasks;    // unordered list of tasks queued from interrupt
   mu_clock_fn clock_fn;    // function to call to get the current time
   mu_task_t *idle_task;    // the idle task
   mu_task_t *current_task; // the task currently being processed
+  mu_spsc_t irq_task_queue;     // Tasks queued at interrupt level
+  mu_spsc_item_t irq_task_queue_store[MU_IRQ_TASK_QUEUE_SIZE];
 } mu_sched_t;
 
 // =============================================================================
@@ -56,23 +57,6 @@ static mu_task_t *get_runnable_task(mu_time_t now);
 static mu_sched_err_t sched_task(mu_task_t *task);
 
 static mu_dlist_t *find_insertion_point(mu_dlist_t *head, mu_time_t time);
-
-/**
- * Remove one task from the interrupt task list.
- */
-static mu_task_t *pop_irq_task(void);
-
-/**
- * @brief Add a task to the irq task list (from interrupt level)
- */
-static void push_irq_task(mu_task_t *task);
-
-/**
- * @brief Remove a task from the IRQ task list (from foreground level).
- *
- * Note: returns NULL if there are no tasks on the IRQ task list.
- */
-static mu_task_t *pop_irq_task(void);
 
 // =============================================================================
 // local storage
@@ -90,17 +74,16 @@ void mu_sched_init() {
   s_sched.idle_task = &s_default_idle_task;
   mu_task_init(&s_default_idle_task, default_idle_fn, NULL, "Idle");
 
+  mu_spsc_init(&s_sched.irq_task_queue, s_sched.irq_task_queue_store, MU_IRQ_TASK_QUEUE_SIZE);
   mu_dlist_init(&s_sched.task_list);
-  mu_dlist_init(&s_sched.irq_tasks);
   mu_sched_reset();
 }
 
 void mu_sched_reset(void) {
+  mu_spsc_reset(&s_sched.irq_task_queue);
+
   while (!mu_dlist_is_empty(&s_sched.task_list)) {
     mu_dlist_pop(&s_sched.task_list);
-  }
-  while (!mu_dlist_is_empty(&s_sched.irq_tasks)) {
-    mu_dlist_pop(&s_sched.irq_tasks);
   }
   s_sched.current_task = NULL;
 }
@@ -110,7 +93,7 @@ mu_sched_err_t mu_sched_step(void) {
   mu_task_t *irq_task;
 
   // Transfer any pending tasks from the interrupt queue to the main schedule
-  while ((irq_task = pop_irq_task()) != NULL) {
+  while (mu_spsc_get(&s_sched.irq_task_queue, &irq_task) == MU_SPSC_ERR_NONE) {
     sched_task(irq_task);
   }
 
@@ -139,12 +122,10 @@ void mu_sched_set_clock_source(mu_clock_fn clock_fn) {
 mu_time_t mu_sched_get_current_time(void) { return s_sched.clock_fn(); }
 
 int mu_sched_task_count(void) {
-  // TODO: needs interrupt protection?
   return mu_dlist_length(&s_sched.task_list);
 }
 
 bool mu_sched_is_empty(void) {
-  // TODO: needs interrupt protection?
   return mu_dlist_is_empty(&s_sched.task_list);
 }
 
@@ -189,9 +170,11 @@ mu_sched_err_t mu_sched_reschedule_in(mu_duration_t in) {
 
 mu_sched_err_t mu_sched_task_from_isr(mu_task_t *task) {
   mu_task_set_time(task, mu_sched_get_current_time());
-  // BUGFIX: If the task was in the schedule, this will break the queue list.
-  push_irq_task(task);
-  return MU_SCHED_ERR_NONE;
+  if (mu_spsc_put(&s_sched.irq_task_queue, task) != MU_SPSC_ERR_NONE) {
+    return MU_SCHED_ERR_FULL;
+  } else {
+    return MU_SCHED_ERR_NONE;
+  }
 }
 
 mu_sched_task_status_t mu_sched_get_task_status(mu_task_t *task) {
@@ -284,18 +267,4 @@ static mu_dlist_t *find_insertion_point(mu_dlist_t *head, mu_time_t time) {
     }
     return list;
   }
-}
-
-static void push_irq_task(mu_task_t *task) {
-  MU_WITH_INTERRUPTS_DISABLED(
-    mu_dlist_push(&s_sched.irq_tasks, mu_task_link(task));
-  );
-}
-
-static mu_task_t *pop_irq_task(void) {
-  mu_dlist_t *item;
-  MU_WITH_INTERRUPTS_DISABLED(
-    item = mu_dlist_pop(&s_sched.irq_tasks);
-  );
-  return (item != NULL) ? MU_DLIST_CONTAINER(item, mu_task_t, link) : NULL;
 }

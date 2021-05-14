@@ -43,7 +43,7 @@ extern "C" {
 #include "core/mu_pstore.h"
 #include "core/mu_queue.h"
 #include "core/mu_sched.h"
-#include "core/mu_spscq.h"
+#include "core/mu_spsc.h"
 #include "core/mu_str.h"
 #include "core/mu_strbuf.h"
 #include "core/mu_task.h"

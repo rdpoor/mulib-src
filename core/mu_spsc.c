@@ -26,9 +26,9 @@
 // includes
 
 #include "mulib.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 // =============================================================================
 // private types and definitions
@@ -44,55 +44,53 @@
 // =============================================================================
 // public code
 
-mu_spscq_err_t mu_spscq_init(mu_spscq_t *q,
-                               mu_spscq_item_t *store,
-                               uint16_t capacity) {
+mu_spsc_err_t mu_spsc_init(mu_spsc_t *q, mu_spsc_item_t *store,
+                           uint16_t capacity) {
   if ((capacity == 0) || !IS_POWER_OF_TWO(capacity)) {
-    return MU_CQUEUE_ERR_SIZE;
+    return MU_SPSC_ERR_SIZE;
   }
   q->mask = capacity - 1;
   q->store = store;
-  return mu_spscq_reset(q);
+  return mu_spsc_reset(q);
 }
 
-mu_spscq_err_t mu_spscq_reset(mu_spscq_t *q) {
+mu_spsc_err_t mu_spsc_reset(mu_spsc_t *q) {
   q->head = 0;
   q->tail = 0;
-  return MU_CQUEUE_ERR_NONE;
+  return MU_SPSC_ERR_NONE;
 }
 
-// Note: capacity is one less than the capacity of the backing store.  This is
-// because we use head == tail to signify an empty queue.
-uint16_t mu_spscq_capacity(mu_spscq_t *q) { return q->mask; }
+/**
+ * @brief To be called by Producer only: update tail only after setting item.
+ */
+mu_spsc_err_t mu_spsc_put(mu_spsc_t *q, mu_spsc_item_t item) {
+  mu_spsc_err_t err = MU_SPSC_ERR_NONE;
+  uint16_t next_tail = (q->tail + 1) & q->mask;
 
-uint16_t mu_spscq_count(mu_spscq_t *q) {
-  return (q->tail - q->head) & q->mask;
-}
-
-bool mu_spscq_is_empty(mu_spscq_t *q) { return q->head == q->tail; }
-
-bool mu_spscq_is_full(mu_spscq_t *q) {
-  // would advancing tail by 1 make it catch up with head?
-  return ((q->tail + 1) & q->mask) == q->head;
-}
-
-mu_spscq_err_t mu_spscq_put(mu_spscq_t *q, mu_spscq_item_t item) {
-  if (mu_spscq_is_full(q)) {
-    return MU_CQUEUE_ERR_FULL;
+  if (next_tail == q->head) {
+    err = MU_SPSC_ERR_FULL;
+  } else {
+    q->store[next_tail] = item;
+    q->tail = next_tail;
   }
-  q->store[q->tail] = item;
-  q->tail = (q->tail + 1) & q->mask;
-  return MU_CQUEUE_ERR_NONE;
+
+  return err;
 }
 
-mu_spscq_err_t mu_spscq_get(mu_spscq_t *q, mu_spscq_item_t *item) {
-  if (mu_spscq_is_empty(q)) {
-    *item = NULL;
-    return MU_CQUEUE_ERR_EMPTY;
+/**
+ * @brief To be called by Consumer only: update head only after fetching item.
+ */
+mu_spsc_err_t mu_spsc_get(mu_spsc_t *q, mu_spsc_item_t *item) {
+  mu_spsc_err_t err = MU_SPSC_ERR_NONE;
+
+  if (q->head == q->tail) {
+    err = MU_SPSC_ERR_EMPTY;
+  } else {
+    *item = q->store[q->head];
+    q->head = (q->head + 1) & q->mask;
   }
-  *item = q->store[q->head];
-  q->head = (q->head + 1) & q->mask;
-  return MU_CQUEUE_ERR_NONE;
+
+  return err;
 }
 
 // =============================================================================

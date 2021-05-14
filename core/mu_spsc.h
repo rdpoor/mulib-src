@@ -22,8 +22,15 @@
  * SOFTWARE.
  */
 
-#ifndef _MU_CQUEUE_H_
-#define _MU_CQUEUE_H_
+/**
+ * @brief Implementation of a lock-free Single Producer / Single Consumer queue.
+ *
+ * spsc stores pointer sized objects in a queue.  In mulib, the scheduler uses
+ * an instance of spsc to mediate between interrupt and foreground levels.
+ */
+
+#ifndef _MU_SPSC_H_
+#define _MU_SPSC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,21 +46,21 @@ extern "C" {
 // types and definitions
 
 typedef enum {
-  MU_CQUEUE_ERR_NONE,
-  MU_CQUEUE_ERR_EMPTY,
-  MU_CQUEUE_ERR_FULL,
-  MU_CQUEUE_ERR_SIZE,
-} mu_spscq_err_t;
+  MU_SPSC_ERR_NONE,
+  MU_SPSC_ERR_EMPTY,
+  MU_SPSC_ERR_FULL,
+  MU_SPSC_ERR_SIZE,
+} mu_spsc_err_t;
 
-// mu_spscq manages pointer-sized objects
-typedef void * mu_spscq_item_t;
+// mu_spsc manages pointer-sized objects
+typedef void * mu_spsc_item_t;
 
 typedef struct {
   uint16_t mask;
   volatile uint16_t head;
   volatile uint16_t tail;
-  mu_spscq_item_t *store;
-} mu_spscq_t;
+  mu_spsc_item_t *store;
+} mu_spsc_t;
 
 // =============================================================================
 // declarations
@@ -62,47 +69,33 @@ typedef struct {
  * @brief initialize a cqueue with a backing store.  capacity must be a power
  * of two.
  */
-mu_spscq_err_t mu_spscq_init(mu_spscq_t *q, mu_spscq_item_t *store, uint16_t capacity);
+mu_spsc_err_t mu_spsc_init(mu_spsc_t *q, mu_spsc_item_t *store, uint16_t capacity);
 
 /**
- * @brief reset the cqueue to empty.
+ * @brief reset the cqueue to empty.  Not interrupt safe!
  */
-mu_spscq_err_t mu_spscq_reset(mu_spscq_t *q);
+mu_spsc_err_t mu_spsc_reset(mu_spsc_t *q);
 
 /**
  * @brief return the maximum number of items that can be stored in the cqueue.
+ * May be called at any time.
  */
-uint16_t mu_spscq_capacity(mu_spscq_t *q);
+uint16_t mu_spsc_capacity(mu_spsc_t *q);
 
 /**
- * @brief Return the number of items in the cqueue.
+ * @brief Insert an item at the tail of the queue.  May only be called by the
+ * producer (interrupt level).
  */
-uint16_t mu_spscq_count(mu_spscq_t *q);
+mu_spsc_err_t mu_spsc_put(mu_spsc_t *q, mu_spsc_item_t item);
 
 /**
- * @brief Return true if there are no items in the queue.
- *
- * Note: this is a tiny bit faster than mu_spscq_count() == 0
+ * @brief Remove an item from the head of the queue.  May only be called by the
+ * consumer (foreground level).
  */
-bool mu_spscq_is_empty(mu_spscq_t *q);
-
-/**
- * @brief Return true if the queue is full.
- */
-bool mu_spscq_is_full(mu_spscq_t *q);
-
-/**
- * @brief Insert an item at the tail of the queue.
- */
-mu_spscq_err_t mu_spscq_put(mu_spscq_t *q, mu_spscq_item_t item);
-
-/**
- * @brief Remove an item from the head of the queue.
- */
-mu_spscq_err_t mu_spscq_get(mu_spscq_t *q, mu_spscq_item_t *item);
+mu_spsc_err_t mu_spsc_get(mu_spsc_t *q, mu_spsc_item_t *item);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // #ifndef _MU_CQUEUE_H_
+#endif // #ifndef _MU_SPSC_H_
