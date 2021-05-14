@@ -67,6 +67,44 @@ Three elements:
           +---+       +---+       +---+       +---+
           | a |       | H |       | c |       | b |
           +---+       +---+       +---+       +---+
+
+## An alternative
+
+NOTE: This is not what's implemented.  I'm describing it as a possible
+alternative since it might be more efficient.  This version makes a distinction
+between list_head and list_item.
+
+An empty list:
+            H
+          +---+
+    items | ^ |
+          +---+
+
+One element
+            H           a
+          +---+       +---+
+          | a |       | ^ |
+          +---+       +---+
+                      | ^ |
+                      +---+
+
+Two elements:
+            H           b            a
+          +---+       +---+       +---+
+          | b |       | a |       | ^ |
+          +---+       +---+       +---+
+                      | ^ |       | b |
+                      +---+       +---+
+
+Three elements:
+            H           c            b           a
+          +---+       +---+       +---+       +---+
+          | c |       | b |       | a |       | ^ |
+          +---+       +---+       +---+       +---+
+                      | ^ |       | c |       | b |
+                      +---+       +---+       +---+
+
+
  */
 
 // =============================================================================

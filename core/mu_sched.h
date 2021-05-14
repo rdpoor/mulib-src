@@ -22,6 +22,63 @@
  * SOFTWARE.
  */
 
+ /**
+Implmeentation notes:
+
+mu_sched implements a discrete time, run-to-completion scheduler.  A mu_task can
+be scheduled to run at some point in the future through the following calls:
+
+    mu_sched_err_t mu_sched_task_now(mu_task_t *task);
+    mu_sched_err_t mu_sched_task_at(mu_task_t *task, mu_time_t at);
+    mu_sched_err_t mu_sched_task_in(mu_task_t *task, mu_duration_t in);
+    mu_sched_err_t mu_sched_reschedule_now(void);
+    mu_sched_err_t mu_sched_reschedule_in(mu_duration_t in);
+
+Each of these functions add a task to the scheduler's queue, implemented as a
+doubly linked list.  In every case, if the task is already present in the queue,
+it is removed prior to scheduling.  This prevents "runaway" scheduling.
+
+The following functions support scheduling events from interrupt level:
+
+    mu_sched_err_t mu_sched_isr_task_now(mu_task_t *task);
+    mu_sched_err_t mu_sched_isr_task_at(mu_task_t *task, mu_time_t at);
+    mu_sched_err_t mu_sched_isr_task_in(mu_task_t *task, mu_duration_t in);
+
+The function
+
+    mu_sched_err_t mu_sched_step(void);
+
+is where all the magic happens.  The scheduler examines the first task in the
+queue, and if its start time has arrived, the task is removed from the queue and
+is called.
+
+## Implementation of the scheduler queue
+
+mu_sched makes an conscious design choice that each task may only appear once
+in the schedule.  This means that at each call to mu_sched_task_xxx(task), the
+scheduler must check to see if the task is already in the queue, and if so, to
+remove it.
+
+To support fast check and removal of a task, the scheduler queue is implemented
+as a doubly linked list: removing a task from the queue merely requires a pair
+of pointer operations.
+
+This approach also means that the task can encapsulate the `prev` and `next`
+link fields requires to insert it into the queue, so no additional storage is
+required.
+
+## Implementation of the ISR queue
+
+mu_sched supports scheduling tasks from interrupt level via the
+`mu_sched_isr_task_xxx()` functions.  Unlike their foreground counterparts,
+these functions do not add tasks directly to the scheduler queue.  Instead,
+tasks are added to a "single produce, single consumer" isr queue, which is
+guaranteed to be interrupt safe.
+
+At foreground level, at the next call to mu_sched_step(), any tasks on the isr
+queue are transferred from the isr queue to the regular scheduler queue.
+*/
+
 #ifndef _MU_SCHED_H_
 #define _MU_SCHED_H_
 
@@ -214,13 +271,40 @@ mu_sched_err_t mu_sched_reschedule_in(mu_duration_t in);
 /**
  * @brief Schedule a task from interrupt level.
  *
- * Note: The task will be safely queued and will be scheduled to run at the next
- * call to sched_step().
+ * Note: At the next call to mu_sched_step(), if the task is currently in the
+ * schedule, it will be removed and re-scheduled.
  *
  * @param task The task to be scheduled.
- * @return MU_SCHED_ERR_NONE.  (Other error returns may be added in the future.)
+ * @return MU_SCHED_ERR_NONE on no error, MU_SCHED_ERR_FULL if the interrupt
+ *         queue is full.
  */
-mu_sched_err_t mu_sched_task_from_isr(mu_task_t *task);
+mu_sched_err_t mu_sched_isr_task_now(mu_task_t *task);
+
+/**
+ * @brief Schedule a task from interrupt level to be run at a particular time.
+ *
+ * Note: At the next call to mu_sched_step(), if the task is currently in the
+ * schedule, it will be removed and re-scheduled.
+ *
+ * @param task The task to be scheduled.
+ * @param at The time at which to run the task.
+ * @return MU_SCHED_ERR_NONE on no error, MU_SCHED_ERR_FULL if the interrupt
+ *         queue is full.
+ */
+mu_sched_err_t mu_sched_isr_task_at(mu_task_t *task, mu_time_t at);
+
+/**
+ * @brief Schedule a task from interrupt level to be run after a given interval.
+ *
+ * Note: At the next call to mu_sched_step(), if the task is currently in the
+ * schedule, it will be removed and re-scheduled.
+ *
+ * @param task The task to be scheduled.
+ * @param in The interval after which to run the task.
+ * @return MU_SCHED_ERR_NONE on no error, MU_SCHED_ERR_FULL if the interrupt
+ *         queue is full.
+ */
+mu_sched_err_t mu_sched_isr_task_in(mu_task_t *task, mu_duration_t in);
 
 /**
  * @brief Return the status of a task.

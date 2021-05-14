@@ -70,7 +70,7 @@ mu_spsc_err_t mu_spsc_put(mu_spsc_t *q, mu_spsc_item_t item) {
   if (next_tail == q->head) {
     err = MU_SPSC_ERR_FULL;
   } else {
-    q->store[next_tail] = item;
+    q->store[q->tail] = item;
     q->tail = next_tail;
   }
 
