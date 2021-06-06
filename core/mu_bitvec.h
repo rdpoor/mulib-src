@@ -26,8 +26,8 @@
  * SOFTWARE.
  */
 
-#ifndef _MU_BVEC_H_
-#define _MU_BVEC_H_
+#ifndef _MU_BITVEC_H_
+#define _MU_BITVEC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -203,4 +203,4 @@ int mu_bitvec_count_zeros(mu_bitvec_t *bv);
 }
 #endif
 
-#endif /* #ifndef _MU_BVEC_H_ */
+#endif /* #ifndef _MU_BITVEC_H_ */

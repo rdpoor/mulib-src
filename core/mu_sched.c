@@ -25,8 +25,11 @@
 // =============================================================================
 // includes
 
-#include "mulib.h" // must come first
+#include "mu_sched.h"
 
+#include "mu_config.h"
+#include "mu_spsc.h"
+#include "mu_task.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
