@@ -62,7 +62,7 @@ static const uint8_t s_byte_rmasks[] =
 // public code
 
 size_t mu_bvec_byte_index(size_t bit_index) {
-  return bit_index >> 8; // Assume compiler is good at this
+  return bit_index >> 3; // Assume compiler is good at this
 }
 
 uint8_t mu_bvec_byte_mask(size_t bit_index) {
@@ -182,7 +182,7 @@ size_t mu_bvec_count_ones(size_t bit_count, mu_bvec_t *store) {
 }
 
 size_t mu_bvec_count_zeros(size_t bit_count, mu_bvec_t *store) {
-  return 1 - mu_bvec_count_ones(bit_count, store);
+  return bit_count - mu_bvec_count_ones(bit_count, store);
 }
 
 // Returns SIZE_MAX if not found
@@ -298,12 +298,19 @@ static uint8_t count_one_bits(uint8_t v) {
 #endif
 
 static uint8_t find_first_one(uint8_t v) {
-  uint8_t c = 8;
-  if (v & 0x0f)
-    c -= 4;
-  if (v & 0x33)
-    c -= 2;
-  if (v & 0x55)
-    c -= 1;
-  return c;
+  if (v == 0) {
+    return 8;
+  } else {
+    uint8_t c = 7;
+    if (v & 0x0f) {
+      c -= 4;
+    }
+    if (v & 0x33) {
+      c -= 2;
+    }
+    if (v & 0x55) {
+      c -= 1;
+    }
+    return c;
+  }
 }
