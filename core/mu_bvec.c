@@ -283,6 +283,11 @@ void mu_bvec_write_all(size_t bit_count, mu_bvec_t *store, bool value) {
 // Take your pick of count_one_bits() implementation -- they're both good, but
 // one may have an advantage over the other on specific architectures.
 #if 1
+// For an explanation of this implementation, see:
+// http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+// https://groups.google.com/g/comp.graphics.algorithms/c/ZKSegl2sr4c/m/QYTwoPSx30MJ
+// http://bit-hack.blogspot.com/2006/10/binary-magic-numbers-for-counting-bits.html
+
 static uint8_t count_one_bits(uint8_t v) {
   uint8_t c = v - ((v >> 1) & 0x55);
   c = ((c >> 2) & 0x33) + (c & 0x33);
@@ -290,6 +295,7 @@ static uint8_t count_one_bits(uint8_t v) {
   return c;
 }
 #else
+
 static uint8_t count_one_bits(uint8_t v) {
   static const uint8_t nibble_count[] = {
       0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
