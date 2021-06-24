@@ -43,18 +43,42 @@ extern "C" {
 // =============================================================================
 // types and definitions
 
+#define DEFINE_ANSI_TERM_COLORS                                                \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BLACK, 30, 40)                                  \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_RED, 31, 41)                                    \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_GREEN, 32, 42)                                  \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_YELLOW, 33, 43)                                 \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BLUE, 34, 44)                                   \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_MAGENTA, 35, 45)                                \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_CYAN, 36, 46)                                   \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_WHITE, 37, 47)                                  \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_GRAY, 90, 100)                                  \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_RED, 91, 101)                            \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_GREEN, 92, 102)                          \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_YELLOW, 93, 103)                         \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_BLUE, 94, 104)                           \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_MAGENTA, 95, 105)                        \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_CYAN, 96, 106)                           \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_WHITE, 97, 107)
+
+#undef ANSI_TERM_COLOR
+#define ANSI_TERM_COLOR(MU_ANSI_TERM__name, _foreground, _background) _name,
+typedef enum {
+  DEFINE_ANSI_TERM_COLORS
+} ansi_term_color_t;
+
 // =============================================================================
 // declarations
+
+/**
+ * @brief Initialize the ansi terminal module.
+ */
+void mu_ansi_term_init(void);
 
 /**
  * @brief Move cursor to 0, 0
  */
 void mu_ansi_term_home(void);
-
-/**
- * @brief Cursor Position
- */
-void mu_ansi_term_cursor_position(uint8_t row, uint8_t col);
 
 /**
  * @brief Erase screen and scrollback
@@ -81,6 +105,27 @@ void mu_ansi_term_clear_line(void);
  */
 void mu_ansi_term_clear_to_end_of_line(void);
 
+/**
+ * @brief Set Cursor Position
+ */
+void mu_ansi_term_set_cursor_position(uint8_t row, uint8_t col);
+
+/**
+ * @brief Get Cursor Position
+ *
+ * Return true if the returned string was the correct format.
+ */
+bool mu_ansi_term_get_cursor_position(uint8_t *row, uint8_t *col);
+
+/**
+ * @brief Set foreground and background color
+ */
+void mu_ansi_term_set_colors(mu_ansi_term_color_t fg, mu_ansi_term_color_t bg);
+
+/**
+ * @brief Get foreground and background color
+ */
+void mu_ansi_term_get_colors(mu_ansi_term_color_t *fg, mu_ansi_term_color_t *bg);
 
 
 #ifdef __cplusplus
