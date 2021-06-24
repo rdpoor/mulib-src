@@ -27,7 +27,7 @@
 
 #include "mu_str.h"
 #include "mu_strbuf.h"
-#include "mulib.h"
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>

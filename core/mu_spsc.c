@@ -25,8 +25,7 @@
 // =============================================================================
 // includes
 
-#include "mulib.h"
-#include <stdbool.h>
+#include "mu_spsc.h"
 #include <stddef.h>
 #include <stdint.h>
 

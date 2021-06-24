@@ -25,7 +25,10 @@
 // =============================================================================
 // includes
 
-#include "mulib.h"
+#include "mu_timer.h"
+#include "mu_task.h"
+#include "mu_time.h"
+#include "mu_sched.h"
 
 // =============================================================================
 // private types and definitions

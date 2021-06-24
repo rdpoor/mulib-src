@@ -29,7 +29,7 @@
 // =============================================================================
 // includes
 
-#include "mulib.h"
+#include "mu_cirq.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>

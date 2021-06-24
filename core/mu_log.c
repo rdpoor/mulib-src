@@ -26,7 +26,7 @@
 // =============================================================================
 // includes
 
-#include "mulib.h"
+#include "mu_log.h"
 
 #ifdef MU_LOG_ENABLED // rest of file...
 
