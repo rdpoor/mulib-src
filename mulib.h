@@ -53,7 +53,8 @@ extern "C" {
 
 // Core mulib module declarations.
 //
-// #include "core/mu_bvec.h"
+#include "core/mu_array.h"
+#include "core/mu_bvec.h"
 // #include "core/mu_cirq.h"
 #include "core/mu_dlist.h"
 // #include "core/mu_fsm.h"
