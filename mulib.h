@@ -49,7 +49,7 @@ extern "C" {
 
 //
 //
-#include "mu_platform/mu_platform.h"
+#include "mu_platform.h"
 
 // Core mulib module declarations.
 //

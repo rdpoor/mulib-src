@@ -90,7 +90,7 @@ extern "C" {
 // includes
 
 #include "mu_task.h"
-#include "mu_platform/mu_time.h"
+#include "mu_time.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

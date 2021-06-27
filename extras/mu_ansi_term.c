@@ -61,7 +61,7 @@ static uint8_t map_bg_color(mu_ansi_term_color_t color);
 // Public code
 
 void mu_ansi_term_init(void) {
-  mu_ansi_term_set_colors_(MU_ANSI_TERM_WHITE, MU_ANSI_TERM_BLACK);
+  mu_ansi_term_set_colors(MU_ANSI_TERM_WHITE, MU_ANSI_TERM_BLACK);
 }
 
 /**

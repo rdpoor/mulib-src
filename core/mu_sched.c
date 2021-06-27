@@ -27,8 +27,8 @@
 
 #include "mu_sched.h"
 
-#include "mu_platform/mu_time.h"
-#include "mu_platform/mu_rtc.h"
+#include "mu_time.h"
+#include "mu_rtc.h"
 #include "mu_spsc.h"
 #include "mu_task.h"
 #include <assert.h>
