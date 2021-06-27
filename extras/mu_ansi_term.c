@@ -54,7 +54,6 @@ static const uint8_t s_bg_colormap[] = { DEFINE_ANSI_TERM_COLORS };
 // Local (forward) declarations
 
 static char getint(uint8_t *val);
-static void set_colors();
 static uint8_t map_fg_color(mu_ansi_term_color_t color);
 static uint8_t map_bg_color(mu_ansi_term_color_t color);
 
@@ -62,8 +61,7 @@ static uint8_t map_bg_color(mu_ansi_term_color_t color);
 // Public code
 
 void mu_ansi_term_init(void) {
-  mu_ansi_term_set_foreground_color(MU_ANSI_TERM_WHITE);
-  mu_ansi_term_set_background_color(MU_ANSI_TERM_BLACK);
+  mu_ansi_term_set_colors_(MU_ANSI_TERM_WHITE, MU_ANSI_TERM_BLACK);
 }
 
 /**
@@ -138,22 +136,22 @@ bool mu_ansi_term_get_cursor_position(uint8_t *row, uint8_t *col) {
   puts(CSI "6n");   // device status reports.  responds with ESC[<row>;<col>R
   ch = getchar();
   if (ch != '\e') {
-    ungetc(ch);
+    ungetc(ch, 0);
     return false;
   }
   ch = getchar();
   if (ch != '[') {
-    ungetc(ch);
+    ungetc(ch, 0);
     return false;
   }
   ch = getint(&temp_row);
   if (ch != ';') {
-    ungetc(ch);
+    ungetc(ch, 0);
     return false;
   }
   ch = getint(&temp_col);
   if (ch != 'R') {
-    ungetc(ch);
+    ungetc(ch, 0);
     return false;
   }
 
