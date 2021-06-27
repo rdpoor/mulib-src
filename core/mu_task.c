@@ -28,7 +28,7 @@
 #include "mu_task.h"
 #include "mu_dlist.h"
 #include "mu_thunk.h"
-#include "mu_time.h"
+#include "mu_platform/mu_time.h"
 #include <stddef.h>
 
 // =============================================================================

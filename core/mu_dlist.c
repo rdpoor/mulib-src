@@ -110,7 +110,7 @@ Three elements:
 // =============================================================================
 // includes
 
-#include "mu_dlist..h"
+#include "mu_dlist.h"
 #include <stdbool.h>
 #include <stddef.h>
 

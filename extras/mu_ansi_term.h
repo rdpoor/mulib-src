@@ -38,6 +38,7 @@ extern "C" {
 // =============================================================================
 // includes
 
+#include <stdbool.h>
 #include <stdint.h>
 
 // =============================================================================
@@ -62,10 +63,10 @@ extern "C" {
   ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_WHITE, 97, 107)
 
 #undef ANSI_TERM_COLOR
-#define ANSI_TERM_COLOR(MU_ANSI_TERM__name, _foreground, _background) _name,
+#define ANSI_TERM_COLOR(_name, _foreground, _background) _name,
 typedef enum {
   DEFINE_ANSI_TERM_COLORS
-} ansi_term_color_t;
+} mu_ansi_term_color_t;
 
 // =============================================================================
 // declarations

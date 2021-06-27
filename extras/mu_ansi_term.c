@@ -26,6 +26,7 @@
 // Includes
 
 #include "mu_ansi_term.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -53,7 +54,7 @@ static const uint8_t s_bg_colormap[] = { DEFINE_ANSI_TERM_COLORS };
 // Local (forward) declarations
 
 static char getint(uint8_t *val);
-static void set_colors()
+static void set_colors();
 static uint8_t map_fg_color(mu_ansi_term_color_t color);
 static uint8_t map_bg_color(mu_ansi_term_color_t color);
 

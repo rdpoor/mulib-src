@@ -27,7 +27,8 @@
 
 #include "mu_sched.h"
 
-#include "mu_config.h"
+#include "mu_platform/mu_time.h"
+#include "mu_platform/mu_rtc.h"
 #include "mu_spsc.h"
 #include "mu_task.h"
 #include <assert.h>
@@ -75,7 +76,7 @@ static mu_task_t s_default_idle_task;
 // public code
 
 void mu_sched_init() {
-  s_sched.clock_fn = mu_time_now;
+  s_sched.clock_fn = mu_rtc_now;
   s_sched.idle_task = &s_default_idle_task;
   mu_task_init(&s_default_idle_task, default_idle_fn, NULL, "Idle");
 

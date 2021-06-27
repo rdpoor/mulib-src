@@ -27,14 +27,18 @@
 
 // About mulib.h:
 //
-// If you are using the "smorgasborg" approach, simply add "#include mulib.h"
-// near the top of any file that uses mulib functions, and be sure to call
-// mulib_init() after performing any processor and board-level initialization.
+// There are two build strategies, referred to as the "prix fixe" approach and
+// the "ala carte" approach.
 //
-// If you are using the "ala carte" approach, copy the selected #include entries
-// from this file into your code.  You may need to call `xxx_init()` (where xxx
-// is the name of a module) prior to using module xxx -- consult the docs for
-// each module to see what initialization is required, if any.
+// The _prix fixe_ approach is the easiest to implement: just `#include mulib.h`
+// in any file that requires mulib functionality and call `mulib_init()` when
+// the system first starts, and everything just works.
+//
+// But if you want the smallest possible code impage, you'll want to use the
+// _ala carte_ approach.  In this scheme, you `#include` only the mulib modules
+// that your application needs.  In addition, for each module named `xxx`, you
+// may need to call `xxx_init()` if that module requires it -- consult the docs
+// see which modules require initialization.
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,13 +47,9 @@ extern "C" {
 // =============================================================================
 // includes
 
-// You must provide platform-specific declarations and implementation for the
-// following modules in your project's mu_platform directory
 //
-#include "mu_platform/mu_config.h"
-#include "mu_platform/mu_button_io.h"
-#include "mu_platform/mu_led_io.h"
-#include "mu_platform/mu_time.h"
+//
+#include "mu_platform/mu_platform.h"
 
 // Core mulib module declarations.
 //
