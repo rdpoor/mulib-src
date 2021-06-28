@@ -139,7 +139,7 @@ size_t mu_str_read_increment(mu_str_t *str, size_t n_bytes) {
   if (str->s > str->e) {
     str->s = str->e;
   }
-  return str->s = s1; // return amount by which s incremented
+  return str->s - s1; // return amount by which s incremented
 }
 
 size_t mu_str_write_increment(mu_str_t *str, size_t n_bytes) {
