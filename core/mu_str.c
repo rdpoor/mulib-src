@@ -77,6 +77,17 @@ mu_str_t *mu_str_copy(mu_str_t *dst, const mu_str_t *src) {
   return (mu_str_t *)memcpy(dst, src, sizeof(mu_str_t));
 }
 
+int mu_str_index(mu_str_t *str, uint8_t byte) {
+  for (int i=str->s; i<str->e; i++) {
+    uint8_t b = mu_strbuf_rdata(str->buf)[i];
+    if (b == byte) {
+      return i - str->s;
+    }
+  }
+  // not found
+  return -1;
+}
+
 mu_str_t *mu_str_slice(mu_str_t *dst, const mu_str_t *src, int start, int end) {
   size_t len = mu_str_read_available(src);
   size_t s1, e1;
