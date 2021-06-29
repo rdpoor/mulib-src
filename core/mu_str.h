@@ -92,6 +92,16 @@ mu_str_t *mu_str_write_reset(mu_str_t *str);
 mu_str_t *mu_str_copy(mu_str_t *dst, const mu_str_t *src);
 
 /**
+ * @brief Search for a byte in a string.
+ *
+ * @param str the mu_str
+ * @param byte the byte to search for.
+ * @return the index of the byte, relative to the str start index, or -1 if
+ *         if the byte was not found between the start and end of str.
+ */
+int mu_str_index(mu_str_t *str, uint8_t byte);
+
+/**
  * @brief Make a slice of a mu_str
  *
  * mu_str_slice takes a substring of a mu_str.  A negative index mean "from
