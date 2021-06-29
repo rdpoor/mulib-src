@@ -27,6 +27,7 @@
 // includes
 
 #include "mu_log.h"
+#include "mu_vect.h"
 
 #ifdef MU_LOG_ENABLED // rest of file...
 

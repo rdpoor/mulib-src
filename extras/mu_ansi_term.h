@@ -40,6 +40,8 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <termios.h>
+#include "mulib.h"
 
 // =============================================================================
 // types and definitions
@@ -60,6 +62,7 @@ extern "C" {
   ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_BLUE, 94, 104)                           \
   ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_MAGENTA, 95, 105)                        \
   ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_CYAN, 96, 106)                           \
+  ANSI_TERM_COLOR(MU_ANSI_TERM_DEFAULT_COLOR, 39, 49)                          \
   ANSI_TERM_COLOR(MU_ANSI_TERM_BRIGHT_WHITE, 97, 107)
 
 #undef ANSI_TERM_COLOR
@@ -67,6 +70,17 @@ extern "C" {
 typedef enum {
   DEFINE_ANSI_TERM_COLORS
 } mu_ansi_term_color_t;
+
+#define STDIN_FILENO 0
+
+#define KEY_POLL_INTERVAL_MS 100
+
+#define MU_ANSI_TERM_ESC "\33["
+#define MU_ANSI_TERM_RESET "0m"
+#define MU_ANSI_SHOW_CURSOR "?25h"
+#define MU_ANSI_HIDE_CURSOR "?25l"
+
+
 
 // =============================================================================
 // declarations
@@ -76,6 +90,7 @@ typedef enum {
  */
 void mu_ansi_term_init(void);
 
+void mu_ansi_term_terminal_bell(void);
 /**
  * @brief Move cursor to 0, 0
  */
@@ -123,11 +138,30 @@ bool mu_ansi_term_get_cursor_position(uint8_t *row, uint8_t *col);
  */
 void mu_ansi_term_set_colors(mu_ansi_term_color_t fg, mu_ansi_term_color_t bg);
 
+
+
 /**
  * @brief Get foreground and background color
  */
 void mu_ansi_term_get_colors(mu_ansi_term_color_t *fg, mu_ansi_term_color_t *bg);
 
+void mu_ansi_term_reset();
+void mu_ansi_term_set_cursor_visible(bool isVisible);
+
+int mu_ansi_term_get_key_press(void);
+void mu_ansi_term_get_terminal_attributes(struct termios *terminal_attributes);
+void mu_ansi_term_set_terminal_attributes(struct termios *terminal_attributes);
+void mu_ansi_term_enter_noncanonical_mode(void);
+void mu_ansi_term_exit_noncanonical_mode(void);
+void mu_begin_polling_for_keypress(void);
+unsigned char mu_term_get_current_keypress();
+
+typedef struct {
+  mu_task_t task;
+  unsigned char key_char;
+} key_poll_ctx_t;
+
+static key_poll_ctx_t mu_ansi_term_key_poll_ctx; // if mu_begin_polling_for_keypress() is called, key_poll_ctx.key_char will contain most recent user key press
 
 #ifdef __cplusplus
 }
