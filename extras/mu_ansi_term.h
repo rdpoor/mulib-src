@@ -162,7 +162,6 @@ typedef struct {
   unsigned char key_char;
 } key_poll_ctx_t;
 
-static key_poll_ctx_t mu_ansi_term_key_poll_ctx; // if mu_begin_polling_for_keypress() is called, key_poll_ctx.key_char will contain most recent user key press
 
 #ifdef __cplusplus
 }
