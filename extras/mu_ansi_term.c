@@ -59,6 +59,8 @@ static const uint8_t s_fg_colormap[] = { DEFINE_ANSI_TERM_COLORS };
 #define ANSI_TERM_COLOR(MU_ANSI_TERM__name, _fg, _bg) _bg,
 static const uint8_t s_bg_colormap[] = { DEFINE_ANSI_TERM_COLORS };
 
+static key_poll_ctx_t mu_ansi_term_key_poll_ctx; // if mu_begin_polling_for_keypress() is called, key_poll_ctx.key_char will contain most recent user key press
+
 // =============================================================================
 // Local (forward) declarations
 
@@ -108,7 +110,7 @@ void mu_ansi_term_init(void) {
 //     printf("Terminal is %dx%d\n", mu_ansi_cols, mu_ansi_rows);
 //     signal(SIGWINCH, got_sigwinch);
 
-    
+
 }
 
 
