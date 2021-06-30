@@ -81,30 +81,34 @@ typedef struct {
 
 // =============================================================================
 // Public code
-void got_sigwinch() {
-  printf("Got it\n");
-}
+// void got_sigwinch() {
+//   printf("Got it\n");
+// }
 
 void mu_ansi_term_init(void) {
-  static mu_flag_store chosen_flags = mu_flag_store_intializer_of_size(100);
-  printf("store %d\n",chosen_flags.count);
+  // static mu_flag_store chosen_flags = mu_flag_store_intializer_of_size(100);
+  // printf("store %d\n",chosen_flags.count);
 
   mu_ansi_term_set_colors(MU_ANSI_TERM_DEFAULT_COLOR, MU_ANSI_TERM_DEFAULT_COLOR);
   mu_ansi_term_get_terminal_attributes(&saved_attributes); // so we can restore later
   _has_saved_attributes = true;
-#ifdef TIOCGSIZE
-    struct ttysize ts;
-    ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
-    mu_ansi_cols = ts.ts_cols;
-    mu_ansi_rows = ts.ts_lines;
-#elif defined(TIOCGWINSZ)
-    struct winsize ts;
-    ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
-    mu_ansi_cols = ts.ws_col;
-    mu_ansi_rows = ts.ws_row;
-#endif /* TIOCGSIZE */
-    printf("Terminal is %dx%d\n", mu_ansi_cols, mu_ansi_rows);
-    signal(SIGWINCH, got_sigwinch);
+
+
+// #ifdef TIOCGSIZE
+//     struct ttysize ts;
+//     ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+//     mu_ansi_cols = ts.ts_cols;
+//     mu_ansi_rows = ts.ts_lines;
+// #elif defined(TIOCGWINSZ)
+//     struct winsize ts;
+//     ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
+//     mu_ansi_cols = ts.ws_col;
+//     mu_ansi_rows = ts.ws_row;
+// #endif /* TIOCGSIZE */
+//     printf("Terminal is %dx%d\n", mu_ansi_cols, mu_ansi_rows);
+//     signal(SIGWINCH, got_sigwinch);
+
+    
 }
 
 
