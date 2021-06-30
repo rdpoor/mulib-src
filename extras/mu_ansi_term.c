@@ -46,7 +46,7 @@ static mu_ansi_term_color_t s_fg_color;
 static mu_ansi_term_color_t s_bg_color;
 
 struct termios saved_attributes;
-
+static bool _has_saved_attributes = false;
 
 #undef ANSI_TERM_COLOR
 #define ANSI_TERM_COLOR(MU_ANSI_TERM__name, _fg, _bg) _fg,
@@ -68,8 +68,9 @@ static void poll_keypress_fn(void *ctx, void *arg);
 // Public code
 
 void mu_ansi_term_init(void) {
-  mu_ansi_term_set_colors(MU_ANSI_TERM_WHITE, MU_ANSI_TERM_BLACK);
-}
+  mu_ansi_term_set_colors(MU_ANSI_TERM_DEFAULT_COLOR, MU_ANSI_TERM_DEFAULT_COLOR);
+  mu_ansi_term_get_terminal_attributes(&saved_attributes); // so we can restore later
+  _has_saved_attributes = true;}
 
 void mu_ansi_term_terminal_bell() {
   printf("\a"); // ansi terminal bell / flash
@@ -251,7 +252,6 @@ void mu_ansi_term_get_terminal_attributes(struct termios *terminal_attributes) {
       tcgetattr(STDIN_FILENO, terminal_attributes);      
 }
 
-static bool _has_saved_attributes = false;
 
 void mu_ansi_term_enter_noncanonical_mode() {
   struct termios info;
