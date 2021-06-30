@@ -155,7 +155,8 @@ void mu_ansi_term_enter_noncanonical_mode(void);
 void mu_ansi_term_exit_noncanonical_mode(void);
 void mu_begin_polling_for_keypress(void);
 unsigned char mu_term_get_current_keypress();
-
+int mu_ansi_term_ncols();
+int mu_ansi_term_nrows();
 typedef struct {
   mu_task_t task;
   unsigned char key_char;

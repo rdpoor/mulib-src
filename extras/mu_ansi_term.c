@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-
+#include <sys/ioctl.h>
 // =============================================================================
 // Local types and definitions
 
@@ -47,6 +47,9 @@ static mu_ansi_term_color_t s_bg_color;
 
 struct termios saved_attributes;
 static bool _has_saved_attributes = false;
+
+static int mu_ansi_cols = 80;
+static int mu_ansi_rows = 24;
 
 #undef ANSI_TERM_COLOR
 #define ANSI_TERM_COLOR(MU_ANSI_TERM__name, _fg, _bg) _fg,
@@ -64,13 +67,46 @@ static uint8_t map_fg_color(mu_ansi_term_color_t color);
 static uint8_t map_bg_color(mu_ansi_term_color_t color);
 static void poll_keypress_fn(void *ctx, void *arg);
 
+
+typedef struct {
+      uint8_t count;
+      char bytes[];
+    } mu_flag_store;
+
+// #define mu_flag_store_intializer_of_size(n) {.count = n,  .bytes = char b[16]}
+// #define mu_flag_store_intializer_of_size(n) {.count = n,  .bytes = [0 ... 16] = 0}
+// #define mu_flag_store_intializer_of_size(n) {.count = n,  .bytes = [0 ... ((n >> 3) + 1)] = 0}
+#define mu_flag_store_intializer_of_size(n) {.count = n }
+
+
 // =============================================================================
 // Public code
+void got_sigwinch() {
+  printf("Got it\n");
+}
 
 void mu_ansi_term_init(void) {
+  static mu_flag_store chosen_flags = mu_flag_store_intializer_of_size(100);
+  printf("store %d\n",chosen_flags.count);
+
   mu_ansi_term_set_colors(MU_ANSI_TERM_DEFAULT_COLOR, MU_ANSI_TERM_DEFAULT_COLOR);
   mu_ansi_term_get_terminal_attributes(&saved_attributes); // so we can restore later
-  _has_saved_attributes = true;}
+  _has_saved_attributes = true;
+#ifdef TIOCGSIZE
+    struct ttysize ts;
+    ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+    mu_ansi_cols = ts.ts_cols;
+    mu_ansi_rows = ts.ts_lines;
+#elif defined(TIOCGWINSZ)
+    struct winsize ts;
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
+    mu_ansi_cols = ts.ws_col;
+    mu_ansi_rows = ts.ws_row;
+#endif /* TIOCGSIZE */
+    printf("Terminal is %dx%d\n", mu_ansi_cols, mu_ansi_rows);
+    signal(SIGWINCH, got_sigwinch);
+}
+
 
 void mu_ansi_term_terminal_bell() {
   printf("\a"); // ansi terminal bell / flash
@@ -250,6 +286,14 @@ void mu_ansi_term_set_terminal_attributes(struct termios *terminal_attributes) {
 }
 void mu_ansi_term_get_terminal_attributes(struct termios *terminal_attributes) {
       tcgetattr(STDIN_FILENO, terminal_attributes);      
+}
+
+
+int mu_ansi_term_ncols() {
+  return mu_ansi_cols;
+}
+int mu_ansi_term_nrows() {
+  return mu_ansi_rows;
 }
 
 
