@@ -40,8 +40,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <termios.h>
-#include "mulib.h"
+
 
 // =============================================================================
 // types and definitions
@@ -71,15 +70,10 @@ typedef enum {
   DEFINE_ANSI_TERM_COLORS
 } mu_ansi_term_color_t;
 
-#define STDIN_FILENO 0
-
-#define KEY_POLL_INTERVAL_MS 100
-
 #define MU_ANSI_TERM_ESC "\33["
 #define MU_ANSI_TERM_RESET "0m"
 #define MU_ANSI_SHOW_CURSOR "?25h"
 #define MU_ANSI_HIDE_CURSOR "?25l"
-
 
 
 // =============================================================================
@@ -148,19 +142,6 @@ void mu_ansi_term_get_colors(mu_ansi_term_color_t *fg, mu_ansi_term_color_t *bg)
 void mu_ansi_term_reset();
 void mu_ansi_term_set_cursor_visible(bool isVisible);
 
-int mu_ansi_term_get_key_press(void);
-void mu_ansi_term_get_terminal_attributes(struct termios *terminal_attributes);
-void mu_ansi_term_set_terminal_attributes(struct termios *terminal_attributes);
-void mu_ansi_term_enter_noncanonical_mode(void);
-void mu_ansi_term_exit_noncanonical_mode(void);
-void mu_begin_polling_for_keypress(void);
-unsigned char mu_term_get_current_keypress();
-int mu_ansi_term_ncols();
-int mu_ansi_term_nrows();
-typedef struct {
-  mu_task_t task;
-  unsigned char key_char;
-} key_poll_ctx_t;
 
 
 #ifdef __cplusplus

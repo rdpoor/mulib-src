@@ -26,14 +26,8 @@
 // Includes
 
 #include "mu_ansi_term.h"
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
+
 // =============================================================================
 // Local types and definitions
 
@@ -45,12 +39,6 @@
 static mu_ansi_term_color_t s_fg_color;
 static mu_ansi_term_color_t s_bg_color;
 
-struct termios saved_attributes;
-static bool _has_saved_attributes = false;
-
-static int mu_ansi_cols = 80;
-static int mu_ansi_rows = 24;
-
 #undef ANSI_TERM_COLOR
 #define ANSI_TERM_COLOR(MU_ANSI_TERM__name, _fg, _bg) _fg,
 static const uint8_t s_fg_colormap[] = { DEFINE_ANSI_TERM_COLORS };
@@ -59,60 +47,21 @@ static const uint8_t s_fg_colormap[] = { DEFINE_ANSI_TERM_COLORS };
 #define ANSI_TERM_COLOR(MU_ANSI_TERM__name, _fg, _bg) _bg,
 static const uint8_t s_bg_colormap[] = { DEFINE_ANSI_TERM_COLORS };
 
-static key_poll_ctx_t mu_ansi_term_key_poll_ctx; // if mu_begin_polling_for_keypress() is called, key_poll_ctx.key_char will contain most recent user key press
-
 // =============================================================================
 // Local (forward) declarations
 
 static char getint(uint8_t *val);
 static uint8_t map_fg_color(mu_ansi_term_color_t color);
 static uint8_t map_bg_color(mu_ansi_term_color_t color);
-static void poll_keypress_fn(void *ctx, void *arg);
-
-
-typedef struct {
-      uint8_t count;
-      char bytes[];
-    } mu_flag_store;
-
-// #define mu_flag_store_intializer_of_size(n) {.count = n,  .bytes = char b[16]}
-// #define mu_flag_store_intializer_of_size(n) {.count = n,  .bytes = [0 ... 16] = 0}
-// #define mu_flag_store_intializer_of_size(n) {.count = n,  .bytes = [0 ... ((n >> 3) + 1)] = 0}
-#define mu_flag_store_intializer_of_size(n) {.count = n }
-
 
 // =============================================================================
 // Public code
-// void got_sigwinch() {
-//   printf("Got it\n");
-// }
+
 
 void mu_ansi_term_init(void) {
-  // static mu_flag_store chosen_flags = mu_flag_store_intializer_of_size(100);
-  // printf("store %d\n",chosen_flags.count);
-
   mu_ansi_term_set_colors(MU_ANSI_TERM_DEFAULT_COLOR, MU_ANSI_TERM_DEFAULT_COLOR);
-  mu_ansi_term_get_terminal_attributes(&saved_attributes); // so we can restore later
-  _has_saved_attributes = true;
-
-
-// #ifdef TIOCGSIZE
-//     struct ttysize ts;
-//     ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
-//     mu_ansi_cols = ts.ts_cols;
-//     mu_ansi_rows = ts.ts_lines;
-// #elif defined(TIOCGWINSZ)
-//     struct winsize ts;
-//     ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
-//     mu_ansi_cols = ts.ws_col;
-//     mu_ansi_rows = ts.ws_row;
-// #endif /* TIOCGSIZE */
-//     printf("Terminal is %dx%d\n", mu_ansi_cols, mu_ansi_rows);
-//     signal(SIGWINCH, got_sigwinch);
-
 
 }
-
 
 void mu_ansi_term_terminal_bell() {
   printf("\a"); // ansi terminal bell / flash
@@ -263,90 +212,6 @@ static uint8_t map_bg_color(mu_ansi_term_color_t color) {
   return s_bg_colormap[color];
 }
 
-/**
- * @brief Assuming our stdin terminal is in non-canonical mode (set via mu_set_terminal_attributes)
- * this function checks stdin for the next user-entered character, but won't hang if there isn't one.
- * If wait_for_newlines was turned off then there will also be no waiting for newline
- * 
- */
-
-int mu_ansi_term_get_key_press(void) {
-    int ch;
-    ch = getchar();
-    if (ch < 0) {
-        if (ferror(stdin)) { /* there was an error... */ }
-        clearerr(stdin);
-        /* there was no keypress */
-        return 0;
-    }
-    if(ch == 3) exit(0); // ctrl-c special case
-    return ch;
-}
-
-/**
- * @brief Change attributes on the terminal.
-*/
-
-void mu_ansi_term_set_terminal_attributes(struct termios *terminal_attributes) {
-    tcsetattr(STDIN_FILENO, TCSANOW, terminal_attributes);
-}
-void mu_ansi_term_get_terminal_attributes(struct termios *terminal_attributes) {
-      tcgetattr(STDIN_FILENO, terminal_attributes);      
-}
-
-
-int mu_ansi_term_ncols() {
-  return mu_ansi_cols;
-}
-int mu_ansi_term_nrows() {
-  return mu_ansi_rows;
-}
-
-
-void mu_ansi_term_enter_noncanonical_mode() {
-  struct termios info;
-  mu_ansi_term_get_terminal_attributes(&saved_attributes); // so we can restore later
-  _has_saved_attributes = true;
- /* get current terminal attirbutes */
-  bool canonical = false, echo_input = false, wait_for_newlines = false; // these could be passed in...
-  tcgetattr(STDIN_FILENO, &info);          
-  info.c_lflag &= ((ICANON && canonical) | (ECHO && echo_input)); // TODO make sure we're toggling these bits correctly
-  info.c_cc[VMIN] = wait_for_newlines ? 1 : 0;
-  info.c_cc[VTIME] = 0;         /* no timeout */
-  tcsetattr(STDIN_FILENO, TCSANOW, &info);
-}
-
-void mu_ansi_term_exit_noncanonical_mode() {
-  if(_has_saved_attributes)
-    mu_ansi_term_set_terminal_attributes(&saved_attributes);
-  printf( "%s%s\n", MU_ANSI_TERM_ESC, MU_ANSI_TERM_RESET); // undo any color settings
-  mu_ansi_term_set_cursor_visible(true);
-}
-
-void mu_begin_polling_for_keypress() {
-  mu_ansi_term_key_poll_ctx.key_char = 0;
-  mu_task_init(&mu_ansi_term_key_poll_ctx.task, poll_keypress_fn, &mu_ansi_term_key_poll_ctx, "key_poll");
-  mu_ansi_term_enter_noncanonical_mode();
-  mu_sched_task_now(&mu_ansi_term_key_poll_ctx.task);
-  atexit(mu_ansi_term_exit_noncanonical_mode); // restores terminal attributes
-}
-
-static void poll_keypress_fn(void *ctx, void *arg) {
-  //key_poll_ctx_t *self = (key_poll_ctx_t *)ctx;
-  (void)arg;  // unused
-  int ch = mu_ansi_term_get_key_press();
-  if(ch) {
-    mu_ansi_term_key_poll_ctx.key_char = ch;
-  }
-  mu_duration_t delay = MU_TIME_MS_TO_DURATION(KEY_POLL_INTERVAL_MS);
-  mu_sched_task_in(&mu_ansi_term_key_poll_ctx.task, delay);
-}
-
-unsigned char mu_term_get_current_keypress() {
-  unsigned char k = mu_ansi_term_key_poll_ctx.key_char;
-  mu_ansi_term_key_poll_ctx.key_char = 0;
-  return k;
-}
 
 
 
