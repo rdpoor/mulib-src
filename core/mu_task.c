@@ -94,12 +94,12 @@ void mu_task_call(mu_task_t *task, void *arg) {
   }
 
 #if (MU_TASK_PROFILING)
-  mu_time_t called_at = mu_time_now();
+  mu_time_t called_at = mu_rtc_now();
 #endif
   mu_thunk_call(&task->thunk, arg);
 #if (MU_TASK_PROFILING)
   task->call_count += 1;
-  mu_duration_t duration = mu_time_difference(mu_time_now(), called_at);
+  mu_duration_t duration = mu_time_difference(mu_rtc_now(), called_at);
   task->runtime += duration;
   if (duration > task->max_duration) task->max_duration = duration;
 #endif
