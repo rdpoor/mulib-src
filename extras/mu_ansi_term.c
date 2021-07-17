@@ -69,6 +69,10 @@ void mu_ansi_term_terminal_bell() {
 
 void mu_ansi_term_reset() {
   printf( "%s%s", MU_ANSI_TERM_ESC, MU_ANSI_TERM_RESET); // undo any color settings
+}
+
+void mu_ansi_term_restore_colors_and_cursor() {
+  mu_ansi_term_reset();
   mu_ansi_term_set_cursor_visible(true);  
 }
 

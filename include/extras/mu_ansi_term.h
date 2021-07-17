@@ -139,8 +139,20 @@ void mu_ansi_term_set_colors(mu_ansi_term_color_t fg, mu_ansi_term_color_t bg);
  */
 void mu_ansi_term_get_colors(mu_ansi_term_color_t *fg, mu_ansi_term_color_t *bg);
 
+/**
+ * @brief Standard ansi term reset
+ */
 void mu_ansi_term_reset();
+
+/**
+ * @brief Set cursor visibility
+ */
 void mu_ansi_term_set_cursor_visible(bool isVisible);
+
+/**
+ * @brief Standard ansi reset and make cursor visible
+*/
+void mu_ansi_term_restore_colors_and_cursor();
 
 
 
