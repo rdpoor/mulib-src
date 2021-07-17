@@ -22,13 +22,6 @@
  * SOFTWARE.
  */
 
-
-/**
- * Random number generator using a permuted congruential generator (PCG)
- * https://en.wikipedia.org/wiki/Permuted_congruential_generator
- */
-
-
 // =============================================================================
 // Includes
 
@@ -38,47 +31,32 @@
 // =============================================================================
 // Local types and definitions
 
+#define RAND_A ((uint32_t)1103515245)
+#define RAND_C ((uint32_t)12345)
+
 // =============================================================================
 // Local (forward) declarations
 
-static uint32_t rotr32(uint32_t x, unsigned r);
-
 // =============================================================================
 // Local storage
-static uint64_t       state      = 0x4d595df4d0f33173;
-static uint64_t const multiplier = 6364136223846793005u;
-static uint64_t const increment  = 1442695040888963407u;
 
+static uint32_t s_random_seed = ((uint32_t)123456789);
 
 // =============================================================================
 // Public code
 
 uint32_t mu_random(void) {
-  uint64_t x = state;
-  unsigned count = (unsigned)(x >> 59);   // 59 = 64 - 5
-
-  state = x * multiplier + increment;
-  x ^= x >> 18;               // 18 = (64 - (32 - 5))/2
-  return rotr32((uint32_t)(x >> 27), count);  // 27 = 32 - 5
+  s_random_seed = (uint32_t)((RAND_A * s_random_seed + RAND_C) & 0x7fffffff);
+  return s_random_seed;
 }
-
 
 uint32_t mu_random_range(uint32_t min, uint32_t max) {
   return min + (mu_random() % (max - min));
 }
 
 void mu_random_seed(uint32_t seed) {
-  state = seed + increment;
-  (void)mu_random();
+  s_random_seed = seed;
 }
 
 // =============================================================================
 // Local (static) code
-
-static uint32_t rotr32(uint32_t x, unsigned r)
-{
-  return x >> r | x << (-r & 31);
-}
-
-
-

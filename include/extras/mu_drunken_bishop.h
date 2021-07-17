@@ -22,63 +22,34 @@
  * SOFTWARE.
  */
 
+#ifndef _MU_DRUNKEN_BISHOP_H_
+#define _MU_DRUNKEN_BISHOP_H_
 
-/**
- * Random number generator using a permuted congruential generator (PCG)
- * https://en.wikipedia.org/wiki/Permuted_congruential_generator
- */
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // =============================================================================
 // Includes
 
-#include "mu_random.h"
 #include <stdint.h>
 
 // =============================================================================
-// Local types and definitions
+// Types and definitions
 
 // =============================================================================
-// Local (forward) declarations
+// Declarations
 
-static uint32_t rotr32(uint32_t x, unsigned r);
+/**
+ * @brief Return a pseudo-random integer between 0 and 2^31 - 1
+ *
+ * @return A pseudo random integer.
+ */
+void print_randomart(char *aString);
 
-// =============================================================================
-// Local storage
-static uint64_t       state      = 0x4d595df4d0f33173;
-static uint64_t const multiplier = 6364136223846793005u;
-static uint64_t const increment  = 1442695040888963407u;
 
-
-// =============================================================================
-// Public code
-
-uint32_t mu_random(void) {
-  uint64_t x = state;
-  unsigned count = (unsigned)(x >> 59);   // 59 = 64 - 5
-
-  state = x * multiplier + increment;
-  x ^= x >> 18;               // 18 = (64 - (32 - 5))/2
-  return rotr32((uint32_t)(x >> 27), count);  // 27 = 32 - 5
+#ifdef __cplusplus
 }
+#endif
 
-
-uint32_t mu_random_range(uint32_t min, uint32_t max) {
-  return min + (mu_random() % (max - min));
-}
-
-void mu_random_seed(uint32_t seed) {
-  state = seed + increment;
-  (void)mu_random();
-}
-
-// =============================================================================
-// Local (static) code
-
-static uint32_t rotr32(uint32_t x, unsigned r)
-{
-  return x >> r | x << (-r & 31);
-}
-
-
-
+#endif /* #ifndef _MU_DRUNKEN_BISHOP_H_ */
