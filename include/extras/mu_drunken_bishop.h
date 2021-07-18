@@ -41,11 +41,10 @@ extern "C" {
 // Declarations
 
 /**
- * @brief Return a pseudo-random integer between 0 and 2^31 - 1
+ * @brief Print human-facing ascii art to the console derived from an arbitrary string
  *
- * @return A pseudo random integer.
  */
-void print_randomart(char *aString);
+void print_random_art_from_string(char *seed_string, int column_width);
 
 
 #ifdef __cplusplus

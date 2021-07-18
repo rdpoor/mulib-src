@@ -33,14 +33,13 @@
 // Local types and definitions
 
 /*
- * Field sizes for the random art.  Have to be odd, so the starting point
+ * Field sizes for the random art have to be odd, so that the starting point
  * can be in the exact middle of the picture, and FLDBASE should be >=8 .
- * Else pictures would be too dense, and drawing the frame would
- * fail, too, because the key type would not fit in anymore.
+ * Else pictures would be too dense to be useful
  */
-#define FLDBASE   8
-#define FLDSIZE_Y (FLDBASE + 1)
-#define FLDSIZE_X (FLDBASE * 2 + 1)
+#define MAX_FLDBASE   40
+#define MAX_FLDSIZE_X (MAX_FLDBASE * 2 + 1)
+#define MAX_FLDSIZE_Y (MAX_FLDBASE + 1)
 
 #define max(a,b)             \
 ({                           \
@@ -59,6 +58,8 @@
 
 // =============================================================================
 // Local storage
+static char field[MAX_FLDSIZE_X][MAX_FLDSIZE_Y];
+
 
 // =============================================================================
 // Local (forward) declarations
@@ -67,29 +68,30 @@
 // Public code
 
 
-void print_randomart(char *aString)
+void print_random_art_from_string(char *seed_string, int column_width)
 {
-  /*
-   * Chars to be used after each other every time the worm
-   * intersects with itself.  Matter of taste.
-   */
-  char  *augmentation_string = " .o+=*BOX@%&#/^SE";
-  char   field[FLDSIZE_X][FLDSIZE_Y];
+  // make sure both dimensions are odd and fit within our static storage
+  int fldsize_x = min(MAX_FLDSIZE_X, ((column_width >> 1) * 2) + 1);
+  int fldsize_y = (fldsize_x >> 1) + 1;
+
+  //These characters represent the bishop's path, each self-crossing points farther into this string
+  char  *worm_string = " .o+=*BOX@%&#/^SE";
   uint32_t  i, b;
   int  x, y;
-  size_t   len = strlen(augmentation_string) - 1;
-  int aString_length = strlen(aString);
+  size_t   len = strlen(worm_string) - 1;
+  int seed_string_length = strlen(seed_string);
 
   /* initialize field */
-  memset(field, 0, FLDSIZE_X * FLDSIZE_Y * sizeof(char));
-  x = FLDSIZE_X / 2;
-  y = FLDSIZE_Y / 2;
+  memset(field, 0, fldsize_x * fldsize_y * sizeof(char));
 
-  /* process raw key */
-  for (i = 0; i < aString_length; i++) {
+  // start the bishop in the center
+  x = fldsize_x / 2;
+  y = fldsize_y / 2;
+
+  for (i = 0; i < seed_string_length; i++) {
     int input;
     /* each byte conveys four 2-bit move commands */
-    input = aString[i];
+    input = seed_string[i];
     for (b = 0; b < 4; b++) {
       /* evaluate 2 bit, rest is shifted later */
       x += (input & 0x1) ? 1 : -1;
@@ -98,8 +100,8 @@ void print_randomart(char *aString)
       /* assure we are still in bounds */
       x = max(x, 0);
       y = max(y, 0);
-      x = min(x, FLDSIZE_X - 1);
-      y = min(y, FLDSIZE_Y - 1);
+      x = min(x, fldsize_x - 1);
+      y = min(y, fldsize_y - 1);
 
       /* augment the field  -- if we are alread at len -1, maybe we shold wrap around? */
       if (field[x][y] < len - 2)
@@ -109,26 +111,27 @@ void print_randomart(char *aString)
   }
 
   /* mark starting point and end point*/
-  field[FLDSIZE_X / 2][FLDSIZE_Y / 2] = len - 1;
+  field[fldsize_x / 2][fldsize_y / 2] = len - 1;
   field[x][y] = len;
 
-  /* output upper border */
-  for (i = 0; i < FLDSIZE_X; i++)
+  /* upper border */
+  printf("+");
+  for (i = 0; i < fldsize_x; i++)
     fputc('-', stdout);
   printf("+\n");
 
-  /* output content */
-  for (y = 0; y < FLDSIZE_Y; y++) {
-    fputc('|', stdout);
-    for (x = 0; x < FLDSIZE_X; x++) {
-      fputc(augmentation_string[min(field[x][y], len)], stdout);
+  /* bishop's path */
+  for (y = 0; y < fldsize_y; y++) {
+    fputc('|', stdout); // left edge
+    for (x = 0; x < fldsize_x; x++) {
+      fputc(worm_string[min(field[x][y], len)], stdout);
     }
-    printf("|\n");
+    printf("|\n"); // right edge
   }
 
-  /* output lower border */
+  /* lower border */
   fputc('+', stdout);
-  for (i = 0; i < FLDSIZE_X; i++)
+  for (i = 0; i < fldsize_x; i++)
     fputc('-', stdout);
   printf("+\n");
 }

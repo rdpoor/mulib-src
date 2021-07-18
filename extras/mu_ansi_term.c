@@ -27,6 +27,7 @@
 
 #include "mu_ansi_term.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 // =============================================================================
 // Local types and definitions
